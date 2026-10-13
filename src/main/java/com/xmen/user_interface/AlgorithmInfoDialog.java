@@ -39,32 +39,35 @@ public final class AlgorithmInfoDialog {
     sub.setWrapText(true);
 
     VBox steps = new VBox(14,
-        step("1.", "Detect Forget(x)",
-            "Scan the rule's action list for a Forget(x) annotation. x is the term the "
-                + "human has chosen to forget at this step."),
+        step("1.", "Detect Forget(x) and ForgetRule(r)",
+            "Scan the rule's action list for the lapse annotations. Forget(x): the human forgets "
+                + "the message x (atomic forgetting). ForgetRule(r): the human forgets how to apply "
+                + "the inference rule r, e.g. 'r_sdec' (procedural forgetting)."),
         step("2.", "Extract the agent's knowledge K",
-            "Pull every term the agent has seen so far: State preconditions, "
-                + "State postconditions, received messages."),
-        step("3.", "Update the Forget set, never K",
-            "Add x to a separate Forget set. K never shrinks (monotonic knowledge), so other "
-                + "occurrences of x in the model stay intact."),
+            "Pull every term the agent has seen so far: the State the rule starts from, values "
+                + "read from other premises, received messages and freshly generated values."),
+        step("3.", "Update the Forget set and the forgotten rules, never K",
+            "Add x to a separate Forget set and r to the set of forgotten rules. K never shrinks "
+                + "(monotonic knowledge), so other occurrences of x in the model stay intact."),
         step("4.", "Look up the send target m₂",
             "Read the outgoing message the rule is about to send — the payload of Send/Out."),
-        step("5.", "Ask: can m₂ still be derived without using x?",
+        step("5.", "Ask: can m₂ still be derived?",
             "Run the Dolev-Yao derivation engine. If at least one derivation of m₂ avoids "
-                + "every term blocked by the Forget set, the original send stays unchanged."),
+                + "every term blocked by the Forget set and every forgotten rule, the original "
+                + "send stays unchanged."),
         step("6.", "Otherwise, find a type-compatible replacement",
-            "Search K for a candidate with the same format (atom/pair/encrypt/function) and "
-                + "the same label as x. For passwords this typically means: another password."),
+            "Only for a forgotten message: search K for a candidate with the same format "
+                + "(atom/pair/encrypt/function) and the same label as x. For passwords this "
+                + "typically means: another password. A forgotten rule is never replaced."),
         step("7.", "Substitute x → replacement everywhere it appears in the rule",
             "Rewrite the Send action, the Out postcondition, and any witness action "
                 + "(e.g. PasswordAttempt) so the trace truthfully records what the agent did. "
                 + "State facts are left untouched — they still hold the original term plus the "
                 + "replacement (knowledge stays monotonic)."),
-        step("8.", "If no replacement exists → Skip + Neglect",
-            "Remove the send and its matching receive. Trigger Neglect on any internal action "
-                + "that depended on x. The mutation produces a partial trace where the human "
-                + "could not proceed."),
+        step("8.", "If no replacement exists → Skip; Neglect what can no longer be done",
+            "Remove the send and its matching receive. In every case, Neglect removes the "
+                + "internal actions (checks) the human can no longer perform because of the "
+                + "lapse. The mutation produces a partial trace where the human could not proceed."),
         step("9.", "Emit a mutated .m file Tamarin can analyse",
             "Suffix the rule name with _M to make the mutation visible and write the new "
                 + "theory to disk. The file is packaged in the response zip alongside the "

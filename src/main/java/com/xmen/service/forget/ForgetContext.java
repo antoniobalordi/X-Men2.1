@@ -1,5 +1,6 @@
 package com.xmen.service.forget;
 
+import com.xmen.model.InferenceRule;
 import com.xmen.model.Message;
 import java.util.*;
 
@@ -8,6 +9,7 @@ import java.util.*;
  * It tracks:
  * - Knowledge K: monotonically growing set of available messages (never shrinks)
  * - Forget set: blocked messages that cannot be used as hypotheses in derivations
+ * - Forgotten rules R̄_H: inference rules the human can no longer apply (Definition 5)
  * - Blocking mode: Case 1 (weak), Case 2 (medium/pairing), or Case 3 (strong/full DY)
  */
 public class ForgetContext {
@@ -25,20 +27,31 @@ public class ForgetContext {
     }
 
     private final Set<Message> knowledge;
+    // Public names and constants ($A, 'c') known to every agent; usable as hypotheses but never
+    // offered as replacement candidates (they are not part of the agent's own knowledge state).
+    private final Set<Message> publicKnowledge = new LinkedHashSet<>();
     private final Set<Message> forgetSet;
+    private final Set<InferenceRule> forgottenRules;
     private final BlockingMode blockingMode;
     private final Map<String, String> typeMap; // maps message representation to type (e.g., "password", "nonce")
 
     public ForgetContext() {
         this.knowledge = new LinkedHashSet<>();
         this.forgetSet = new LinkedHashSet<>();
+        this.forgottenRules = new TreeSet<>();
         this.blockingMode = BlockingMode.CASE1_WEAK;
         this.typeMap = new HashMap<>();
     }
 
     public ForgetContext(Set<Message> knowledge, Set<Message> forgetSet, BlockingMode mode, Map<String, String> typeMap) {
+        this(knowledge, forgetSet, Set.of(), mode, typeMap);
+    }
+
+    public ForgetContext(Set<Message> knowledge, Set<Message> forgetSet, Set<InferenceRule> forgottenRules,
+                         BlockingMode mode, Map<String, String> typeMap) {
         this.knowledge = new LinkedHashSet<>(knowledge);
         this.forgetSet = new LinkedHashSet<>(forgetSet);
+        this.forgottenRules = new TreeSet<>(forgottenRules == null ? Set.of() : forgottenRules);
         this.blockingMode = mode;
         this.typeMap = typeMap != null ? new HashMap<>(typeMap) : new HashMap<>();
     }
@@ -47,15 +60,17 @@ public class ForgetContext {
      * Creates a copy of this context for the next transition.
      */
     public ForgetContext copy() {
-        return new ForgetContext(this.knowledge, this.forgetSet, this.blockingMode, this.typeMap);
+        ForgetContext c = new ForgetContext(this.knowledge, this.forgetSet, this.forgottenRules, this.blockingMode, this.typeMap);
+        c.publicKnowledge.addAll(this.publicKnowledge);
+        return c;
     }
 
     /**
      * Updates the context for a transition where message m1 is received and message m is forgotten.
-     * Per paper:
-     * - If m == m1: do NOT add m1 to K; remove m1 from Forget if present
-     * - If m != m1: add m to Forget; if m1 was in Forget, remove it (unforget on re-receive)
-     * - K is always monotonic (only grows) except when m == m1
+     * Per Algorithm 1:
+     * - If m == m1 (lines 3-6): K, Forget and R̄ stay unchanged; m1 is not added to K
+     * - If m != m1 (lines 7-10): K ∪ {m1}, Forget ∪ {m}
+     * - Re-acquisition (Sec. 4.3): a message that is received (and stored) leaves the Forget set
      *
      * @param m1 the received message
      * @param m the message being forgotten (null if no forget at this transition)
@@ -65,8 +80,7 @@ public class ForgetContext {
             return;
         }
         if (m != null && m.equals(m1)) {
-            // Forget the just-received message: don't add m1 to K, remove from Forget
-            forgetSet.remove(m1);
+            // Forget the just-received message: K and Forget unchanged (Algorithm 1, lines 4-5)
         } else {
             // Normal case: add m1 to knowledge
             if (m1 != null) {
@@ -102,6 +116,21 @@ public class ForgetContext {
     }
 
     /**
+     * Records that the human has forgotten inference rule {@code r} (Algorithm 1, line 43).
+     * Forgotten rules persist in later transitions (Definition 5).
+     */
+    public void forgetRule(InferenceRule r) {
+        if (r != null) {
+            forgottenRules.add(r);
+        }
+    }
+
+    /** R̄_H: the inference rules the human has forgotten. */
+    public Set<InferenceRule> getForgottenRules() {
+        return Collections.unmodifiableSet(forgottenRules);
+    }
+
+    /**
      * Adds a message to the forget set.
      */
     public void addForget(Message msg) {
@@ -112,6 +141,20 @@ public class ForgetContext {
 
     public Set<Message> getKnowledge() {
         return Collections.unmodifiableSet(knowledge);
+    }
+
+    /** Records public names / constants that any agent may use in a derivation. */
+    public void addPublicKnowledge(Collection<Message> messages) {
+        if (messages != null) {
+            publicKnowledge.addAll(messages);
+        }
+    }
+
+    /** Hypotheses available to derivations: K plus public names and constants. */
+    public Set<Message> getDerivationKnowledge() {
+        Set<Message> all = new LinkedHashSet<>(knowledge);
+        all.addAll(publicKnowledge);
+        return Collections.unmodifiableSet(all);
     }
 
     public Set<Message> getForgetSet() {
@@ -157,6 +200,7 @@ public class ForgetContext {
         return "ForgetContext{" +
                 "knowledge=" + knowledge.stream().map(Message::represent).toList() +
                 ", forgetSet=" + forgetSet.stream().map(Message::represent).toList() +
+                ", forgottenRules=" + forgottenRules +
                 ", blockingMode=" + blockingMode +
                 '}';
     }

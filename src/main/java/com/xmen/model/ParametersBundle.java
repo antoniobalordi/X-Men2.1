@@ -10,7 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /** ParametersBundle class represents a collection of parameters used in the application. */
 @Slf4j
@@ -30,6 +32,13 @@ public class ParametersBundle {
   Flags flags;
   Map<String, String> existingSetupKnowledge = new HashMap<>();
   Map<String, LinkedHashSet<String>> forgetMutationSet = new HashMap<>();
+
+  // Procedural forgetting: rule name -> inference rules forgotten in that transition
+  // (ForgetRule(r) annotations, Definition 4 case 3 / Definition 5).
+  Map<String, LinkedHashSet<InferenceRule>> forgetRuleSet = new HashMap<>();
+
+  // Function symbols declared [private] in the theory (cannot be composed by agents).
+  Set<String> privateFunctions = new HashSet<>();
 
   // Transition-aware forget context for a single mutation run (non-serialized).
   transient ForgetContext forgetContext;

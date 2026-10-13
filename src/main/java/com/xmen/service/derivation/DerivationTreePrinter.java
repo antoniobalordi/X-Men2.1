@@ -283,21 +283,28 @@ public class DerivationTreePrinter {
         if (rule == null) return null;
         String upper = rule.toUpperCase(Locale.ROOT);
 
+        String id = node.getInferenceRule() != null ? " [" + node.getInferenceRule() + "]" : "";
         if (upper.startsWith("PROJECTION-FIRST")) {
-            return "from a pair, take the first component";
+            return "from a pair, take the first component" + id;
         }
         if (upper.startsWith("PROJECTION-SECOND")) {
-            return "from a pair, take the second component";
+            return "from a pair, take the second component" + id;
+        }
+        if (upper.startsWith("ASYMDECRYPTION")) {
+            return "decrypt with the matching private key" + id;
         }
         if (upper.startsWith("DECRYPTION")) {
-            return "decrypt a protected message using a key";
+            return "decrypt a protected message using a key" + id;
         }
         if (upper.startsWith("PAIRING")) {
-            return "combine parts into a pair/tuple";
+            return "combine parts into a pair/tuple" + id;
+        }
+        if (upper.startsWith("ENCRYPTION")) {
+            return "encrypt a message with a key" + id;
         }
         // For functions, we keep it simple
         if (upper.startsWith("PREDICTIVEFUNCTION")) {
-            return "apply a function to its arguments";
+            return "apply a function to its arguments" + id;
         }
         return null;
     }

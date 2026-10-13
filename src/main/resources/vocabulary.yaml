@@ -19,7 +19,8 @@ xmen:
     actions:
       send:          "Send"           # H sends m to A
       receive:       "Receive"        # H receives m from A
-      forget:        "Forget"         # H forgets a message
+      forget:        "Forget"         # H forgets a message (atomic forgetting)
+      forget-rule:   "ForgetRule"     # H forgets an inference rule (procedural forgetting)
       human-marker:  "H"              # marks a rule as human-driven
       setup:         "Setup"          # ceremony setup action
       fresh:         "Fr"             # fresh-value declaration
@@ -40,6 +41,7 @@ xmen:
         - "ChanRcvS"
         - "Hfin"
         - "Forget"
+        - "ForgetRule"
 
     # ---------------------------------------------------------------
     # Fact families (what appears inside [ ... ] on either side of a rule)

@@ -2,7 +2,6 @@ package com.xmen.service.forget;
 
 import com.xmen.model.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -19,15 +18,13 @@ public class ReplacementComputer {
 
     private static final int MAX_VARIANTS = 100; // Cap to prevent explosion
 
-    @Autowired
-    private BlockingChecker blockingChecker;
-
     /**
      * Computes the replacement set R_m̄ for a blocked hypothesis.
-     * Per Algorithm 1:
-     * - Candidate must NOT be blocked in ctx'
+     * Per Algorithm 1, line 22:
+     * - Candidate is in K' and not in Forget'
      * - Candidate must have matching format
-     * - Candidate must satisfy label/type constraints
+     * - Candidate must have the same label as the blocked hypothesis (an unlabelled hypothesis
+     *   can only be replaced by an unlabelled candidate)
      *
      * @param blocked the blocked hypothesis to replace
      * @param ctx the updated context (K' and Forget')
@@ -53,9 +50,10 @@ public class ReplacementComputer {
                 continue;
             }
 
-            // Candidate must NOT be blocked
-            if (blockingChecker.isBlocked(candidate, ctx)) {
-                log.debug("  Candidate {} is blocked, skipping", candidate.represent());
+            // Algorithm 1, line 22: m̄' ∉ Forget^{i+1} (set membership, as written in the paper;
+            // under Cases 2/3 a candidate derivable from Forget is still admitted here)
+            if (ctx.getForgetSet().contains(candidate)) {
+                log.debug("  Candidate {} is forgotten, skipping", candidate.represent());
                 continue;
             }
 
@@ -65,9 +63,9 @@ public class ReplacementComputer {
                 continue;
             }
 
-            // Check label/type constraint
+            // Check label/type constraint: same label as the blocked hypothesis (line 22)
             String candidateType = ctx.getTypeOf(candidate);
-            if (blockedType != null && !blockedType.equals(candidateType)) {
+            if (!Objects.equals(blockedType, candidateType)) {
                 log.debug("  Candidate {} type mismatch ({} vs {}), skipping",
                          candidate.represent(), candidateType, blockedType);
                 continue;

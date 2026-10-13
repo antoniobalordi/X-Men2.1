@@ -1309,3 +1309,19 @@ entries:
       - Forgetting passwords is common and influenced by usage frequency and retention.
       - The Forget paper turns those human factors into a formal mutation for automated analysis.
     related: [paper.forget.memory-motivation, paper.bank-login.attack]
+
+  - id: paper.forget.procedural
+    title: Procedural forgetting (ForgetRule)
+    category: mutation
+    terms: [procedural forgetting, ForgetRule, forget inference rule, forget a rule, forgotten rule, forget how to decrypt, Rules of a derivation, r_sdec, r_unpair]
+    definition: |
+      Procedural forgetting is the third case of the Forget mutation in the journal version: the human keeps every message but forgets an inference rule, such as symmetric decryption (r_sdec) or projection (r_unpair). Every derivation that applies a forgotten rule becomes unusable.
+    details:
+      - Annotate the human rule with ForgetRule('r_sdec') (or r_pair, r_unpair, r_senc, r_aenc, r_adec, or r_f for a function f of the theory such as r_h).
+      - The received message is still stored; the rule is added to the set of forgotten rules, which persists in later transitions.
+      - Internal checks whose arguments can no longer be derived are neglected.
+      - The send is kept if some derivation uses no forgotten rule and no forgotten message; otherwise it is skipped.
+      - A forgotten rule never triggers Replace, because substituting values cannot give back a skill.
+    why: |
+      Atomic forgetting (Forget(x)) blocks derivations that use a forgotten message as a hypothesis; procedural forgetting blocks derivations that apply a forgotten rule.
+    related: [paper.forget.definition, paper.forget.algorithm, paper.forget.blocked-derivations]

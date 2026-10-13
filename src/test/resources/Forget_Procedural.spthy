@@ -1,0 +1,104 @@
+/****MODEL****/
+theory Procedural
+
+begin
+
+builtins: symmetric-encryption, hashing
+
+functions: tag/1
+
+/****RULES****/
+
+/*
+ * Procedural forgetting fixture. $Server sends the human a ciphertext
+ * senc(<x,y>,k) under the shared key k. To answer with h(x) the human must
+ * decrypt (r_sdec), project (r_unpair) and hash (r_h). The internal check
+ * CheckSecret(x) is constrained by a restriction, so it is an internal
+ * action of the role script; Running/Accept are lemma witnesses only.
+ */
+rule humansetup:
+	[ Fr(~k), Fr(~x), Fr(~y), Fr(~n), Fr(~z) ]
+	--[ OnlyOnce() ]->
+	[ !Type($User,'key',~k)
+	, !Type($User,'nonce',~n)
+	, !Type($User,'secret',~x)
+	, !Type($User,'secret',~y)
+	, !Type($User,'secret',~z)
+	, !Init($User,$Server,~k,~x,~y,~n,~z)
+	]
+
+rule Setup:
+	[ !Init($User,$Server,k,x,y,n,z) ]
+	--[ Setup($User)
+	  , Roles($User,$Server)
+	  ]->
+	[ State($User,'1',<$Server,k,n>)
+	, State($Server,'1',<$User,k,x,y,z>)
+	]
+
+rule Server_1:
+	[ State($Server,'1',<$User,k,x,y,z>) ]
+	--[ Running($Server,x) ]->
+	[ State($Server,'2',<$User,k,x,y,z>)
+	, Out(senc(<x,y>,k))
+	]
+
+rule User_1:
+	[ State($User,'1',<$Server,k,n>)
+	, In(senc(<x,y>,k))
+	]
+	--[ H()
+	  , Receive($User,'c1',senc(<x,y>,k))
+	  , ForgetRule('r_sdec')
+	  , CheckSecret(x)
+	  , Send($User,'proof',h(x))
+	  , To($Server)
+	  ]->
+	[ State($User,'2',<$Server,k,n,x,y>)
+	, Out(h(x))
+	]
+
+rule Server_2:
+	[ State($Server,'2',<$User,k,x,y,z>)
+	, In(h(x))
+	]
+	--[ Accept($Server,x) ]->
+	[ State($Server,'3',<$User,k,x,y,z>)
+	, Out(senc(z,k))
+	]
+
+rule User_2:
+	[ State($User,'2',<$Server,k,n,x,y>)
+	, In(senc(z,k))
+	]
+	--[ H()
+	  , Receive($User,'c2',senc(z,k))
+	  , ForgetRule('r_pair')
+	  , Send($User,'ack',h(z))
+	  , To($Server)
+	  ]->
+	[ State($User,'3',<$Server,k,n,x,y,z>)
+	, Out(h(z))
+	]
+
+/****ENDOFRULES****/
+
+/****RESTRICTIONS****/
+
+restriction OnlyOnce:
+	"All #i #j. OnlyOnce()@#i & OnlyOnce()@#j ==> #i = #j"
+
+restriction CheckSecret:
+	"All x #i. CheckSecret(x) @ #i ==> Ex s #j. Running(s,x) @ #j & #j < #i"
+
+/****LEMMAS****/
+
+lemma Executable: exists-trace
+	"Ex s x #i. Accept(s,x) @ #i"
+
+lemma Secret_x: all-traces
+	"All s x #i. Accept(s,x) @ #i ==> not (Ex #t. K(x) @ #t)"
+
+end
+
+/****ENDOFMODEL****/

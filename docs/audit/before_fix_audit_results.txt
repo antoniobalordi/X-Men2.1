@@ -1,0 +1,97 @@
+# Before-fix results: new audit tests run against the ORIGINAL implementation (commit d8c6404)
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 7.407 s <<< FAILURE! - in com.xmen.integrationTests.ForgetReplacementVariantsTest
+[ERROR] twoDistinctReplacements  Time elapsed: 1.428 s  <<< FAILURE!
+Expected size: 2 but was: 1 in:
+[ERROR] Tests run: 11, Failures: 11, Errors: 0, Skipped: 0, Time elapsed: 0.106 s <<< FAILURE! - in com.xmen.service.derivation.DerivationEnumerationOracleTest
+[ERROR] example4TwoDerivations  Time elapsed: 0.004 s  <<< FAILURE!
+expected: ["m1{K}()", "m1{sdec}(senc(m1, m2){K}();m2{K}())"]
+ but was: ["m1{K}()"]
+[ERROR] decompositionChains  Time elapsed: 0 s  <<< FAILURE!
+expected: ["x{fst}((x, y){sdec}(senc((x, y), k){K}();k{K}()))"]
+ but was: []
+[ERROR] userFunctionComposition  Time elapsed: 0 s  <<< FAILURE!
+expected: ["k(nH, nB){app:k}(nH{K}();nB{K}())"]
+ but was: []
+[ERROR] composedKey  Time elapsed: 0 s  <<< FAILURE!
+expected: ["m{sdec}(senc(m, h(x)){K}();h(x){app:h}(x{K}()))"]
+ but was: []
+[ERROR] legacyEncryptPremises  Time elapsed: 0 s  <<< FAILURE!
+expected: ["m1{K}()", "m1{sdec}({m1}_{m2}{K}();m2{K}())"]
+ but was: ["m1{K}()", "m1{sdec}(m2{K}())"]
+[ERROR] randomisedDifferential  Time elapsed: 0.086 s  <<< FAILURE!
+[mismatches among 300 checked instances] 
+Expecting empty but was: ["target=h(b) K=[senc(b, k), (aenc(c, pk(b)), (k, a))] expected=1 produced=0",
+    "target=(senc(k, b), aenc(a, pk(a))) K=[(h(c), aenc(c, pk(c))), (senc(k, b), aenc(a, pk(a))), senc(h(b), (k, k)), c] expected=1 produced=2",
+    "target=senc(c, senc(c, a)) K=[(a, c), senc(c, a)] expected=4 produced=2",
+    "target=(c, k) K=[senc((k, c), c), (c, k), aenc(h(b), pk(a)), k] expected=1 produced=3",
+    "target=((k, k), c) K=[((c, c), (b, c)), ((k, k), c), senc(aenc(c, pk(c)), a), c] expected=1 produced=3"]
+[ERROR] nestedProjection  Time elapsed: 0.002 s  <<< FAILURE!
+expected: ["c{snd}((b, c){snd}((a, (b, c)){K}()))"]
+ but was: []
+[ERROR] asymmetricDecryption  Time elapsed: 0.001 s  <<< FAILURE!
+expected: ["m{adec}(aenc(m, pk(sk)){K}();sk{K}())"]
+ but was: []
+[ERROR] sharedDependency  Time elapsed: 0.001 s  <<< FAILURE!
+expected: 
+ but was: 
+[ERROR] symmetricDecryptionOfTamarinTerm  Time elapsed: 0.001 s  <<< FAILURE!
+expected: ["m{sdec}(senc(m, k){K}();k{K}())"]
+ but was: []
+[ERROR] bankLoginCredentialMessage  Time elapsed: 0.002 s  <<< FAILURE!
+expected: 
+ but was: 
+[ERROR] Tests run: 8, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 0.013 s <<< FAILURE! - in com.xmen.service.forget.PaperExamplesTest
+[ERROR] forgetJustReceivedKeepsForgetSet  Time elapsed: 0 s  <<< FAILURE!
+Expecting actual:
+[ERROR] example1  Time elapsed: 0.001 s  <<< FAILURE!
+Expecting value to be true but was false
+[ERROR] example4  Time elapsed: 0.001 s  <<< FAILURE!
+Expected size: 2 but was: 1 in:
+[ERROR] example5  Time elapsed: 0.002 s  <<< FAILURE!
+Expecting value to be false but was true
+[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.106 s <<< FAILURE! - in com.xmen.service.forget.ForgetDerivabilityOracleTest
+[ERROR] randomised  Time elapsed: 0.106 s  <<< FAILURE!
+[33 mismatches among 600 checks] 
+Expecting empty but was: ["CASE1_WEAK target=c K=[((b, k), (c, b)), a, ((c, k), c), k, c] Forget=[a, ((c, k), c), c] expected=true got=false",
+    "CASE2_PAIRING target=c K=[((b, k), (c, b)), a, ((c, k), c), k, c] Forget=[a, ((c, k), c), c] expected=true got=false",
+    "CASE3_FULL_DY target=c K=[((b, k), (c, b)), a, ((c, k), c), k, c] Forget=[a, ((c, k), c), c] expected=true got=false",
+    "CASE1_WEAK target=aenc(b, pk(a)) K=[senc(aenc(b, pk(a)), a), h((c, b)), (h(k), c), aenc(h(b), pk(c)), a, c] Forget=[h((c, b)), aenc(h(b), pk(c)), c] expected=true got=false",
+    "CASE2_PAIRING target=aenc(b, pk(a)) K=[senc(aenc(b, pk(a)), a), h((c, b)), (h(k), c), aenc(h(b), pk(c)), a, c] Forget=[h((c, b)), aenc(h(b), pk(c)), c] expected=true got=false"]
+Expected size: 2 but was: 1 in:
+expected: ["m{adec}(aenc(m, pk(sk)){K}();sk{K}())"]
+ but was: []
+expected: 
+ but was: 
+expected: ["m{sdec}(senc(m, h(x)){K}();h(x){app:h}(x{K}()))"]
+ but was: []
+expected: ["x{fst}((x, y){sdec}(senc((x, y), k){K}();k{K}()))"]
+ but was: []
+expected: ["m1{K}()", "m1{sdec}(senc(m1, m2){K}();m2{K}())"]
+ but was: ["m1{K}()"]
+expected: ["m1{K}()", "m1{sdec}({m1}_{m2}{K}();m2{K}())"]
+ but was: ["m1{K}()", "m1{sdec}(m2{K}())"]
+expected: ["c{snd}((b, c){snd}((a, (b, c)){K}()))"]
+ but was: []
+[ERROR]   DerivationEnumerationOracleTest.randomisedDifferential:149 [mismatches among 300 checked instances] 
+Expecting empty but was: ["target=h(b) K=[senc(b, k), (aenc(c, pk(b)), (k, a))] expected=1 produced=0",
+    "target=(senc(k, b), aenc(a, pk(a))) K=[(h(c), aenc(c, pk(c))), (senc(k, b), aenc(a, pk(a))), senc(h(b), (k, k)), c] expected=1 produced=2",
+    "target=senc(c, senc(c, a)) K=[(a, c), senc(c, a)] expected=4 produced=2",
+    "target=(c, k) K=[senc((k, c), c), (c, k), aenc(h(b), pk(a)), k] expected=1 produced=3",
+    "target=((k, k), c) K=[((c, c), (b, c)), ((k, k), c), senc(aenc(c, pk(c)), a), c] expected=1 produced=3"]
+expected: 
+ but was: 
+expected: ["m{sdec}(senc(m, k){K}();k{K}())"]
+ but was: []
+expected: ["k(nH, nB){app:k}(nH{K}();nB{K}())"]
+ but was: []
+[ERROR]   ForgetDerivabilityOracleTest.randomised:99 [33 mismatches among 600 checks] 
+Expecting empty but was: ["CASE1_WEAK target=c K=[((b, k), (c, b)), a, ((c, k), c), k, c] Forget=[a, ((c, k), c), c] expected=true got=false",
+    "CASE2_PAIRING target=c K=[((b, k), (c, b)), a, ((c, k), c), k, c] Forget=[a, ((c, k), c), c] expected=true got=false",
+    "CASE3_FULL_DY target=c K=[((b, k), (c, b)), a, ((c, k), c), k, c] Forget=[a, ((c, k), c), c] expected=true got=false",
+    "CASE1_WEAK target=aenc(b, pk(a)) K=[senc(aenc(b, pk(a)), a), h((c, b)), (h(k), c), aenc(h(b), pk(c)), a, c] Forget=[h((c, b)), aenc(h(b), pk(c)), c] expected=true got=false",
+    "CASE2_PAIRING target=aenc(b, pk(a)) K=[senc(aenc(b, pk(a)), a), h((c, b)), (h(k), c), aenc(h(b), pk(c)), a, c] Forget=[h((c, b)), aenc(h(b), pk(c)), c] expected=true got=false"]
+Expecting value to be true but was false
+Expected size: 2 but was: 1 in:
+Expecting value to be false but was true
+Expecting actual:
+[ERROR] Tests run: 21, Failures: 17, Errors: 0, Skipped: 0

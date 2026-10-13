@@ -1,0 +1,41 @@
+# After-fix results (xvfb-run -a mvn -B test, 2026-10-13)
+[oracle] enumeration: 300 instances checked, 0 skipped as too large
+[oracle] Def. 5+7: 600 checks, 0 mismatches, forgotten rules changed the outcome in 55
+[oracle] Def. 7: 600 checks, 0 mismatches
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.062 s - in com.xmen.utilities.LexerDebugTest
+[WARNING] Tests run: 1, Failures: 0, Errors: 0, Skipped: 1, Time elapsed: 0.001 s - in com.xmen.utilities.ParserDebugTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.906 s - in com.xmen.ApplicationTests
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 37.061 s - in com.xmen.userInterfaceTests.XMenInterfaceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.745 s - in com.xmen.integrationTests.SkipReceiveSendTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.065 s - in com.xmen.integrationTests.SkipReceiveTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.048 s - in com.xmen.integrationTests.SkipSendTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.065 s - in com.xmen.integrationTests.ReplaceSubmessagesTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.312 s - in com.xmen.integrationTests.AddMutationTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.074 s - in com.xmen.integrationTests.SkipSendReceiveTests
+[INFO] Tests run: 18, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.638 s - in com.xmen.integrationTests.ForgetMutationStrategyIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.047 s - in com.xmen.integrationTests.SkipReceiveSendReceiveTests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s - in com.xmen.integrationTests.TrialCaseForgetMutationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s - in com.xmen.integrationTests.ForgetReplacementVariantsTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.411 s - in com.xmen.integrationTests.NeglectMutationTests
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s - in com.xmen.integrationTests.ForgetNeglectTriggerTest
+[INFO] Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.262 s - in com.xmen.integrationTests.ProceduralForgettingE2ETest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.integrationTests.ReplaceTypeTests
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.service.derivation.InferenceRuleAndParserTest
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s - in com.xmen.service.derivation.DerivationEnumerationOracleTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s - in com.xmen.service.derivation.ProceduralDerivationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.095 s - in com.xmen.service.ThemePersistenceTest
+[INFO] Tests run: 21, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.372 s - in com.xmen.service.chatbot.ChatBotServiceSmokeTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s - in com.xmen.service.forget.ForgetMutationE2ETest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.service.forget.PaperExamplesTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.service.forget.BlockingCheckerCase1Test
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.24 s - in com.xmen.service.forget.ForgetDerivabilityOracleTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.service.forget.BlockingCheckerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.service.forget.ForgetMutationFullIntegrationTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.service.forget.ReplacementComputerTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.service.forget.ForgetContextTransitionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0 s - in com.xmen.service.FileSplitterServiceTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.198 s - in com.xmen.user_interface.ChatBotDialogUiTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.524 s - in com.xmen.user_interface.UiAdaptationTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.866 s - in com.xmen.user_interface.DisplayScaleSupportTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s - in com.xmen.RuntimeCompatibilityTest
+[WARNING] Tests run: 169, Failures: 0, Errors: 0, Skipped: 2

@@ -33,6 +33,7 @@
   - [The mutation menu — what each checkbox actually does](#the-mutation-menu--what-each-checkbox-actually-does)
   - [The end-to-end flow — step by step](#the-end-to-end-flow--step-by-step)
   - [Forget mutation — what the "derivation tree" is](#forget-mutation--what-the-derivation-tree-is-and-why-youll-see-it)
+    - [Procedural forgetting (`ForgetRule`)](#procedural-forgetting--forgetting-how-rather-than-what)
   - ["Infinite Derivations" vs "Specified Depth"](#infinite-derivations-vs-specified-depth--which-one-to-pick)
   - [After the run — where do my files go?](#after-the-run--where-do-my-files-go)
 - [Downloads & Installation](#-downloads--installation)
@@ -85,7 +86,7 @@ verification. The current toolchain implements the following mutations:
 | **ADD** | A user adds an action unforeseen by the ceremony |
 | **REPLACE** | A user replaces the message to be sent with another message |
 | **NEGLECT** | A user neglects an internal action |
-| **FORGET** | A user forgets to add newly acquired information to their knowledge or forgets some information they previously possessed |
+| **FORGET** | A user forgets to add newly acquired information to their knowledge, forgets some information they previously possessed (*atomic forgetting*), or forgets how to apply an inference rule such as decrypting or projecting (*procedural forgetting*) |
 
 The **Forget** mutation — the most recent addition — is the focus of the
 companion research paper and is the engine behind X-Men 2.0's example use case,
@@ -163,7 +164,7 @@ example.
 | **Replace → Type** | The user swaps one value for **another value of the same kind**.                                                                                                                                  | Using yesterday's QR code instead of today's. |
 | **Combination → Combination in Addition** | Two mistakes at once: the user **adds** an extra send **and** uses a **replaced** value in it.                                                                                                    | Tapping a second card *and* using someone else's card to do it. |
 | **Combination → Combination Only** | Same as above but X-Men 2.0 *only* generates the combined case (no plain Add results).                                                                                                                | Same scenario, narrower output. |
-| **Forget Mutation** | The user **had** the right value at some point but **can't recall it now**.                                                                                                                       | Forgetting your bank password and typing the one for a different bank. |
+| **Forget Mutation** | The user **had** the right value at some point but **can't recall it now** (`Forget(x)`), or still has every value but **no longer knows how to do a step** such as decrypting (`ForgetRule(r)`). | Forgetting your bank password and typing the one for a different bank; forgetting how to decrypt the bank's challenge. |
 | **Forget Mutation using external Haskell Script** | Same Forget behavior, same result but X-Men 2.0 hands the heavy "what can the user still figure out?" math to an optional external Haskell helper. | (Same as above.) |
 | **Neglect Mutation** | The user **doesn't check** something they should have.                                                                                                                                            | Accepting an e-ticket without comparing the date on it to today's date. |
 
@@ -244,6 +245,78 @@ the human still remembers of the same type* — that's where you sometimes
 get the *"sent the wrong password"* style attack. If no compatible replacement
 exists, the send is skipped instead.
 
+#### Procedural forgetting — forgetting *how* rather than *what*
+
+The forgetting above concerns a **message** (*atomic forgetting*: `Forget(x)`).
+The journal version of the paper adds a second kind of memory lapse
+(Definition 4, case 3): the human keeps every message but **forgets an
+inference rule** — e.g. how to decrypt, how to take a component out of a
+tuple, how to hash. This is *procedural forgetting*. Formally (Definition 5),
+forgetting a rule `r` makes **every derivation that applies `r` unusable**,
+whatever it is applied to; the forgotten rule stays forgotten in the later
+steps of the same run.
+
+**How to invoke it.** Exactly like atomic forgetting: annotate the human
+transition in your `.spthy` and run the Forget mutation (UI checkbox,
+`POST /api/forget/mutations`, or `/api/generateMutations` with
+`Forget-Mutation: true`). Only the annotation differs:
+
+```
+rule H_2:
+  [ State($Human,'2',<$B1,$B2,nH,pw1,pw2,ltkH>), In(aenc(<nH,nB>,pk(ltkH))) ]
+--[ H(), ForgetRule('r_adec'), Send($Human,'m3',senc(<$Human,pw1>,k(nH,nB))) ]->
+  [ State($Human,'3',<$B1,$B2,nH,nB,pw1,pw2>), Out(senc(<$Human,pw1>,k(nH,nB))) ]
+```
+
+| Rule name | What the human can no longer do |
+| --- | --- |
+| `r_pair` | build a pair / tuple `<a,b>` |
+| `r_unpair` | take a component out of a pair (both projections) |
+| `r_senc` / `r_sdec` | symmetric encryption / decryption |
+| `r_aenc` / `r_adec` | asymmetric encryption / decryption (with the private key) |
+| `r_f` | apply the function `f` of your theory, e.g. `r_h` (hashing), `r_sign`, `r_k` for `functions: k/2` |
+
+Names may be quoted (`'r_sdec'`, recommended because it is valid Tamarin) or
+written without the `r_` prefix (`sdec`, `fst`, `snd`). Several rules may be
+listed (`ForgetRule('r_sdec','r_unpair')`), and `Forget(x)` and `ForgetRule(r)`
+may be combined in one rule. A rule that does not exist in the theory
+(e.g. `r_h` without `builtins: hashing`) is rejected with HTTP 400 and the list
+of rules available for that file.
+
+**What happens (Algorithm 1, lines 40–53).**
+
+1. The human still stores the received message; the rule is added to the set of
+   forgotten rules.
+2. Every internal action (a check constrained by a restriction, e.g. `Eq(..)`)
+   whose arguments can no longer be derived is removed (**NEGLECT**).
+3. If some derivation of the outgoing message uses no forgotten rule and no
+   forgotten message, the send is **preserved**. Otherwise the send and its
+   matching receive are removed (**SKIP**). A forgotten rule never triggers a
+   **REPLACE**: substituting values cannot give back a skill.
+
+**How it differs from atomic forgetting.** Atomic forgetting blocks derivations
+that use a forgotten message *as a hypothesis* and may lead to REPLACE (the
+human sends a similar value they still remember). Procedural forgetting blocks
+derivations that *apply* a forgotten rule, keeps all hypotheses available, and
+leads only to NEGLECT, preservation or SKIP.
+
+**Reading the result.** Next to the mutated models, the zip contains
+`<file>_DerivationTree.txt`. For each annotated transition it lists the lapse,
+the knowledge `K`, the `Forget` set, the forgotten rules, every normal
+derivation of the outgoing message with its hypotheses and its rules
+`Rules(π)` (`blocked=[…]`, `forgottenRulesUsed=[…]`), and the decision taken.
+
+**Assumptions and limitations.** Forgetting a whole procedure (a specific
+derivation) only exists in the paper's Defeasible-Logic formalisation and is not
+implemented. Action facts that are used only by lemmas (e.g. `PasswordAttempt`)
+are treated as witnesses, not as internal checks. The knowledge of a transition
+is its pre-`State` payload, the values read from other premises (e.g. `!Ltk`,
+`!Pk`), the agent's own name, the received message and fresh values; values that
+the modeller wrote into the post-`State` are not used as hypotheses because the
+agent only obtains them by inference. See
+[`IMPLEMENTATION_REPORT.md`](IMPLEMENTATION_REPORT.md) for the full mapping to
+the paper and the derivation audit.
+
 #### What the "Show derivation tree on screen" checkbox does
 
 If you tick it, the app pops up the derivation tree it actually used for
@@ -256,9 +329,15 @@ When you tick **Forget Mutation**, the app enables two radio choices.
 The radio choices — **Infinite** and **Specified Depth** — control **how
 hard X-Men 2.0 tries** when building the derivation trees.
 
-The reason this knob exists: every operation (pair, encrypt, …) can be
-nested inside another operation, so derivation trees can grow forever in
-principle. X-Men 2.0 needs to know how big you'll let them get.
+The reason this knob exists: a message can have many derivations, and listing
+all of them can be expensive. X-Men 2.0 only considers *normal* derivations (no
+value is rebuilt from itself), so the list is always finite, but it can be large.
+
+Whether the send is preserved does **not** depend on this setting: X-Men 2.0
+decides exactly whether some usable derivation exists. The setting only bounds
+the list of derivations that is printed in the report and from which REPLACE
+variants are built; when the bound cuts the list, the report says
+`TRUNCATED by limits`.
 
 | Setting | What it does | Best for | Trade-off |
 | --- | --- | --- | --- |
@@ -919,7 +998,7 @@ any code**.
 
 ### 🗣️ Vocabulary (Level 1 generalisation)
 
-Every "hardcoded" word like `Send`, `Receive`, `Forget`, `State`, `Out`, `In` lives in
+Every "hardcoded" word like `Send`, `Receive`, `Forget`, `ForgetRule`, `State`, `Out`, `In` lives in
 [`src/main/resources/vocabulary.yaml`](src/main/resources/vocabulary.yaml). The Forget
 mutation reads its non-internal action set from there, and the file binds to a Spring
 `@ConfigurationProperties` bean (`CeremonyVocabulary`) that the Settings API can mutate at
@@ -1075,7 +1154,8 @@ X-Men_2.0/
 | --- | --- | --- |
 | `mvnw.cmd` errors on Windows: *"Unexpected token 's' in expression or statement."* | Project path contains an apostrophe. | Already patched — `mvnw.cmd` escapes `'` before calling PowerShell. If you re-ran `mvn -N wrapper:wrapper`, re-apply the patch. |
 | Native UI doesn't open. | Headless mode left on. | Add VM option `-Djava.awt.headless=false` to the run configuration. |
-| `Forget` mutation produces no changes. | The `.spthy` rule has no `Forget(...)` action. | Add an explicit `Forget(<term>)` annotation to the rule of interest. |
+| `Forget` mutation produces no changes. | The `.spthy` rule has no `Forget(...)` / `ForgetRule(...)` action, or the forgotten message / rule is not needed for the send. | Add an explicit `Forget(<term>)` or `ForgetRule('<rule>')` annotation to the rule of interest; read `_DerivationTree.txt` to see which derivations survived. |
+| HTTP 400 *"unknown inference rule"*. | `ForgetRule` names a rule the theory does not have. | Use one of the rules listed in the error message (paper rules plus `r_f` for each declared or builtin function). |
 | `Haskell-Activate: true` has no effect. | External Haskell service not reachable. | See [`HASKELL_DERIVATION_SERVICE.md`](./HASKELL_DERIVATION_SERVICE.md#9-troubleshooting). |
 | CORS blocked from a custom frontend. | Origin not whitelisted. | Set `APP_CORS_ALLOWED_ORIGINS` to include your origin. |
 | Docker build slow on subsequent rebuilds. | Layer cache invalidated by source edits. | Edits under `src/` only invalidate Stage 1's source layer — dependency resolution stays cached. |

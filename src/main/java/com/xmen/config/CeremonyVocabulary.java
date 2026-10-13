@@ -46,6 +46,9 @@ public class CeremonyVocabulary {
     private String receive = "Receive";
     private String forget = "Forget";
 
+    @JsonProperty("forget-rule")
+    private String forgetRule = "ForgetRule";
+
     @JsonProperty("human-marker")
     private String humanMarker = "H";
 
@@ -68,7 +71,8 @@ public class CeremonyVocabulary {
                 "ChanSndS",
                 "ChanRcvS",
                 "Hfin",
-                "Forget"));
+                "Forget",
+                "ForgetRule"));
   }
 
   @Data
@@ -124,6 +128,11 @@ public class CeremonyVocabulary {
   @JsonIgnore
   public boolean isForgetAction(String name) {
     return Objects.equals(name, actions.forget);
+  }
+
+  @JsonIgnore
+  public boolean isForgetRuleAction(String name) {
+    return Objects.equals(name, actions.forgetRule);
   }
 
   @JsonIgnore

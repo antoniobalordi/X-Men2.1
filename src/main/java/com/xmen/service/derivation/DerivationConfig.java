@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * DerivationConfig defines which function symbols are allowed for projection/decomposition
- * in the derivation tree, and tracks user-defined functions that should remain opaque.
+ * DerivationConfig holds the limits of the derivation enumeration and the function symbols of
+ * the loaded theory.
  *
- * GOAL: Stop exponential blow-up by limiting projections to a whitelist of built-in
- * Tamarin functions, and never decomposing user-defined functions.
+ * <p>Composition ("apply f to derivable arguments") is allowed for every public function symbol,
+ * including user-defined ones (Tamarin functions are public unless declared {@code [private]});
+ * decomposition is only possible for pairs and encryptions. See {@link DolevYaoTerms}. The
+ * whitelist/blacklist below are only used for display hints.
  */
 public class DerivationConfig {
 
@@ -44,6 +46,9 @@ public class DerivationConfig {
     /** User-defined functions parsed from the model's "functions:" section */
     private final Set<String> userDefinedFunctions;
 
+    /** Function symbols declared {@code [private]} (cannot be composed by the agent). */
+    private final Set<String> privateFunctions;
+
     /** Maximum derivations per target (to prevent explosion) */
     private final int maxDerivationsPerTarget;
 
@@ -59,7 +64,13 @@ public class DerivationConfig {
     }
 
     public DerivationConfig(Set<String> userDefinedFunctions, int maxDerivationsPerTarget, int maxDepth) {
+        this(userDefinedFunctions, Set.of(), maxDerivationsPerTarget, maxDepth);
+    }
+
+    public DerivationConfig(Set<String> userDefinedFunctions, Set<String> privateFunctions,
+                            int maxDerivationsPerTarget, int maxDepth) {
         this.userDefinedFunctions = new HashSet<>(userDefinedFunctions);
+        this.privateFunctions = new HashSet<>(privateFunctions == null ? Set.of() : privateFunctions);
         this.maxDerivationsPerTarget = maxDerivationsPerTarget;
         this.maxDepth = maxDepth;
     }
@@ -112,6 +123,10 @@ public class DerivationConfig {
         return Collections.unmodifiableSet(userDefinedFunctions);
     }
 
+    public Set<String> getPrivateFunctions() {
+        return Collections.unmodifiableSet(privateFunctions);
+    }
+
     public Set<String> getProjectionWhitelist() {
         return PROJECTION_WHITELIST;
     }
@@ -144,6 +159,7 @@ public class DerivationConfig {
         return "DerivationConfig{" +
                "whitelist=" + PROJECTION_WHITELIST +
                ", userDefined=" + userDefinedFunctions +
+               ", private=" + privateFunctions +
                ", maxDerivations=" + maxDerivationsPerTarget +
                ", maxDepth=" + maxDepth +
                '}';

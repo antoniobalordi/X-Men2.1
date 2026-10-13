@@ -133,5 +133,48 @@ public class ReplacementComputerTest {
         // bal's argument should still be $oyster!
         assertThat(((Atom) balFunc.getArgs().get(0)).getValue()).isEqualTo("$oyster");
     }
+
+    @Test
+    @DisplayName("Alg. 1 line 22: R = {m' in K | m' not in Forget, same format, same label}")
+    void replacementSetFollowsLine22() {
+        Message pw1 = new Atom("pw1");
+        Message pw2 = new Atom("pw2");
+        Message pw3 = new Atom("pw3");
+        Message nonce = new Atom("n");
+        Message pairedPw = new Pair(pw2, nonce);
+        Map<String, String> labels = Map.of("pw1", "password", "pw2", "password", "pw3", "password", "n", "nonce");
+        ForgetContext ctx = new ForgetContext(
+            new LinkedHashSet<>(List.of(pw1, pw2, pw3, nonce, pairedPw)),
+            new LinkedHashSet<>(List.of(pw1, pw3)), ForgetContext.BlockingMode.CASE1_WEAK, labels);
+        // pw3 is forgotten, n has another label, <pw2,n> has another format.
+        assertThat(replacementComputer.computeReplacementSet(pw1, ctx)).containsExactly(pw2);
+    }
+
+    @Test
+    @DisplayName("Line 22 tests m' not in Forget, not closure membership (Case 3)")
+    void replacementSetUsesForgetMembership() {
+        Message pw1 = new Atom("pw1");
+        Message pw2 = new Atom("pw2");
+        Message k = new Atom("k");
+        Message c = new PredictiveFunction("senc", List.of(pw2, k));
+        Map<String, String> labels = Map.of("pw1", "password", "pw2", "password");
+        // Forget ⊢ pw2 (decrypt c with k), but pw2 itself is not in Forget.
+        ForgetContext ctx = new ForgetContext(
+            new LinkedHashSet<>(List.of(pw1, pw2, k, c)),
+            new LinkedHashSet<>(List.of(pw1, k, c)), ForgetContext.BlockingMode.CASE3_FULL_DY, labels);
+        assertThat(replacementComputer.computeReplacementSet(pw1, ctx)).containsExactly(pw2);
+    }
+
+    @Test
+    @DisplayName("An unlabelled hypothesis is only replaced by unlabelled candidates")
+    void unlabelledHypothesisNeedsUnlabelledCandidate() {
+        Message x = new Atom("x");
+        Message y = new Atom("y");
+        Message pw = new Atom("pw");
+        ForgetContext ctx = new ForgetContext(
+            new LinkedHashSet<>(List.of(x, y, pw)), new LinkedHashSet<>(List.of(x)),
+            ForgetContext.BlockingMode.CASE1_WEAK, Map.of("pw", "password"));
+        assertThat(replacementComputer.computeReplacementSet(x, ctx)).containsExactly(y);
+    }
 }
 

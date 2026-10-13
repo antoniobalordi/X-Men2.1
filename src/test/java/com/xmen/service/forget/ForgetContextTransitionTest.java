@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ForgetContextTransitionTest {
 
   @Test
-  @DisplayName("m == m1: knowledge does not gain m1 and Forget removes m1")
+  @DisplayName("m == m1: knowledge does not gain m1 and Forget is unchanged (Algorithm 1, line 5)")
   void updateForTransitionSameMessage() {
     Message m1 = new Atom("m1");
     Set<Message> knowledge = new LinkedHashSet<>();
@@ -25,7 +25,9 @@ class ForgetContextTransitionTest {
     ctx.updateForTransition(m1, m1);
 
     assertFalse(ctx.getKnowledge().contains(m1));
-    assertFalse(ctx.getForgetSet().contains(m1));
+    // Forget^{i+1} := Forget^i: an m1 forgotten earlier stays forgotten when the re-received
+    // copy is not stored either.
+    assertTrue(ctx.getForgetSet().contains(m1));
   }
 
   @Test

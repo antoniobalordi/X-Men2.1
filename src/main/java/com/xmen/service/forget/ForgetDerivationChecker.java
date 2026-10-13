@@ -2,8 +2,11 @@ package com.xmen.service.forget;
 
 import com.xmen.model.Derivation;
 import com.xmen.model.Function;
+import com.xmen.model.InferenceRule;
 import com.xmen.model.Message;
 import com.xmen.service.derivation.DerivationConfig;
+import com.xmen.service.derivation.DolevYaoDeducer;
+import com.xmen.service.derivation.NormalDerivationEnumerator;
 import com.xmen.service.impl.DerivationServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,13 +17,11 @@ import java.util.*;
 
 /**
  * ForgetDerivationChecker implements the core derivation checking for Algorithm 1:
- * - Checks if a target is derivable under forgetting (exists unblocked derivation)
- * - Extracts hypotheses from derivations for blocked hypothesis analysis
- * - Computes whether mutation is needed based on unblocked derivation existence
- *
- * IMPORTANT: This checker uses a restricted derivation engine that only decomposes
- * whitelist built-in functions (pair, senc, aenc, etc.) and never decomposes
- * user-defined functions to prevent exponential blow-up.
+ * - Checks if a target is derivable under forgetting: some normal derivation has no blocked
+ *   hypothesis (Definition 7) and applies no forgotten rule (Definition 5). This decision is
+ *   exact ({@link DolevYaoDeducer}) and does not depend on the enumeration limits.
+ * - Enumerates the normal derivations Π (needed for the REPLACE branch and for the report),
+ *   reporting when depth/count limits truncated the enumeration.
  */
 @Slf4j
 @Component
@@ -38,6 +39,9 @@ public class ForgetDerivationChecker {
 
     /** Current user-defined functions (non-decomposable) */
     private Set<String> userDefinedFunctions = new HashSet<>();
+
+    /** Function symbols declared [private] in the loaded theory (cannot be composed). */
+    private Set<String> privateFunctions = new HashSet<>();
 
     /**
      * Active depth / derivation caps. Initialised to the safe defaults; a controller
@@ -73,10 +77,25 @@ public class ForgetDerivationChecker {
     private void refreshConfig() {
         DerivationConfig config = new DerivationConfig(
             this.userDefinedFunctions,
+            this.privateFunctions,
             this.maxDerivations,
             this.depthLimit
         );
         derivationService.setConfig(config);
+        if (blockingChecker != null) {
+            blockingChecker.setPrivateFunctions(this.privateFunctions);
+        }
+    }
+
+    /** Function symbols declared {@code [private]} in the theory; they cannot be composed. */
+    public void configurePrivateFunctions(Set<String> functions) {
+        this.privateFunctions = new HashSet<>();
+        if (functions != null) {
+            for (String f : functions) {
+                if (f != null) this.privateFunctions.add(f.toLowerCase().trim());
+            }
+        }
+        refreshConfig();
     }
 
     /**
@@ -104,12 +123,16 @@ public class ForgetDerivationChecker {
     }
 
     /**
-     * Checks if target m2 is derivable under forgetting.
-     * Per Algorithm 1: returns true if there EXISTS at least one derivation
-     * where ALL hypotheses are NOT blocked.
+     * Checks if target m2 is derivable under forgetting: there EXISTS a normal derivation whose
+     * hypotheses are all unblocked (Definition 7) and which applies no forgotten inference rule
+     * (Definition 5, Algorithm 1 lines 16 and 47-48).
+     *
+     * <p>Equivalently, m2 is derivable from the non-blocked part of K using only non-forgotten
+     * rules (removing the cycles of any such derivation yields a normal one with fewer hypotheses
+     * and rules). This is decided exactly, independently of the enumeration limits.
      *
      * @param target the target message to derive (m2 - the send message)
-     * @param ctx the forget context containing K and Forget
+     * @param ctx the forget context containing K, Forget and R̄
      * @return true if an unblocked derivation exists, false otherwise
      */
     public boolean derivableUnderForgetting(Message target, ForgetContext ctx) {
@@ -117,39 +140,49 @@ public class ForgetDerivationChecker {
             log.warn("Null target or context in derivableUnderForgetting");
             return false;
         }
+        return derivable(target, ctx, ctx.getForgottenRules());
+    }
 
-        log.info("Checking derivability under forgetting for target: {}", target.represent());
-        log.debug("Knowledge: {}", ctx.getKnowledge().stream().map(Message::represent).toList());
-        log.debug("Forget set: {}", ctx.getForgetSet().stream().map(Message::represent).toList());
-        log.debug("Blocking mode: {}", ctx.getBlockingMode());
-
-        // Get all derivations
-        Set<Derivation> derivations = getAllDerivations(target, ctx.getKnowledge());
-
-        if (derivations.isEmpty()) {
-            log.info("No derivations found for target {}", target.represent());
-            return false;
+    /**
+     * Like {@link #derivableUnderForgetting} but with an explicit set of forgotten rules (used to
+     * compare the situation before and after a procedural lapse).
+     */
+    public boolean derivable(Message target, ForgetContext ctx, Set<InferenceRule> forgottenRules) {
+        List<Message> usable = new ArrayList<>();
+        for (Message h : ctx.getDerivationKnowledge()) {
+            if (!blockingChecker.isBlocked(h, ctx)) usable.add(h);
         }
+        boolean result = new DolevYaoDeducer(privateFunctions)
+            .derivable(target, usable, DolevYaoDeducer.excluding(forgottenRules));
+        log.info("Derivable under forgetting: {} -> {} (Forget={}, forgotten rules={})",
+                 target.represent(), result,
+                 ctx.getForgetSet().stream().map(Message::represent).toList(), forgottenRules);
+        return result;
+    }
 
-        log.info("Found {} derivations for target {}", derivations.size(), target.represent());
-
-        // Check each derivation for blocked hypotheses
-        for (Derivation derivation : derivations) {
-            Set<Message> blockedHypotheses = blockingChecker.findBlockedHypotheses(derivation, ctx);
-
-            if (blockedHypotheses.isEmpty()) {
-                // Found an unblocked derivation - no mutation needed
-                log.info("Found unblocked derivation for target {} - no mutation needed", target.represent());
-                return true;
-            } else {
-                log.debug("Derivation has {} blocked hypotheses: {}",
-                         blockedHypotheses.size(),
-                         blockedHypotheses.stream().map(Message::represent).toList());
+    /**
+     * Enumerates the normal derivations of {@code target} from {@code knowledge} with the active
+     * limits, reporting truncation.
+     */
+    public NormalDerivationEnumerator.Result enumerate(Message target, Set<Message> knowledge) {
+        if (target == null || knowledge == null) {
+            return new NormalDerivationEnumerator.Result(Collections.emptySet(), false);
+        }
+        NormalDerivationEnumerator.Result r = derivationService.enumerate(target, knowledge, this.depthLimit);
+        if (r.derivations().size() > this.maxDerivations) {
+            log.warn("Truncating derivations from {} to {}", r.derivations().size(), this.maxDerivations);
+            Set<Derivation> truncated = new LinkedHashSet<>();
+            for (Derivation d : r.derivations()) {
+                if (truncated.size() >= this.maxDerivations) break;
+                truncated.add(d);
             }
+            return new NormalDerivationEnumerator.Result(truncated, true);
         }
-
-        log.info("All {} derivations have blocked hypotheses - mutation needed", derivations.size());
-        return false;
+        if (r.truncated()) {
+            log.warn("Derivation enumeration for {} hit the depth/count limits; the set of derivations "
+                     + "may be incomplete (the derivability decision itself is exact)", target.represent());
+        }
+        return r;
     }
 
     /**
@@ -157,34 +190,10 @@ public class ForgetDerivationChecker {
      * Uses the Java derivation service to enumerate derivations.
      */
     public Set<Derivation> getAllDerivations(Message target, Set<Message> knowledge) {
-        if (target == null || knowledge == null) {
-            return Collections.emptySet();
-        }
-
         try {
-            // Use the SILENT derivation path here: this method drives the mutation
-            // analysis (blocked-hypothesis checks). The visualisation tree is printed
-            // separately by ForgetMutationStrategy via printDerivationTree(...), so
-            // we do not want this call to also dump a (possibly less informative)
-            // tree on top of it.
-            Set<Derivation> derivations = derivationService.deriveToDepthNoPrint(target, knowledge, this.depthLimit);
-
-            // Cap the number of derivations to prevent explosion
-            if (derivations.size() > this.maxDerivations) {
-                log.warn("Truncating derivations from {} to {}", derivations.size(), this.maxDerivations);
-                Set<Derivation> truncated = new LinkedHashSet<>();
-                int count = 0;
-                for (Derivation d : derivations) {
-                    if (count >= this.maxDerivations) break;
-                    truncated.add(d);
-                    count++;
-                }
-                return truncated;
-            }
-
-            return derivations;
+            return enumerate(target, knowledge).derivations();
         } catch (Exception e) {
-            log.error("Error getting derivations for target {}: {}", target.represent(), e.getMessage());
+            log.error("Error getting derivations for target {}: {}", target == null ? null : target.represent(), e.getMessage());
             return Collections.emptySet();
         }
     }
@@ -219,7 +228,7 @@ public class ForgetDerivationChecker {
         Set<Derivation> derivations = getAllDerivations(target, ctx.getKnowledge());
 
         for (Derivation derivation : derivations) {
-            if (!blockingChecker.hasBlockedHypotheses(derivation, ctx)) {
+            if (blockingChecker.isUsable(derivation, ctx)) {
                 return Optional.of(derivation);
             }
         }
@@ -235,7 +244,7 @@ public class ForgetDerivationChecker {
         List<Derivation> blocked = new ArrayList<>();
 
         for (Derivation derivation : derivations) {
-            if (blockingChecker.hasBlockedHypotheses(derivation, ctx)) {
+            if (!blockingChecker.isUsable(derivation, ctx)) {
                 blocked.add(derivation);
             }
         }

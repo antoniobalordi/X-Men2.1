@@ -1,24 +1,34 @@
 package com.xmen.service.forget;
 
 import com.xmen.model.*;
+import com.xmen.service.derivation.DerivationRules;
+import com.xmen.service.derivation.DolevYaoDeducer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
- * BlockingChecker implements the three blocking cases from the paper:
+ * BlockingChecker implements the three blocking cases of Definition 6:
  * - Case 1 (weak): h is blocked if h ∈ Forget
- * - Case 2 (medium): h is blocked if h is derivable from Forget using ONLY pairing rules
- * - Case 3 (strong): h is blocked if h is derivable from Forget using ALL DY rules
+ * - Case 2 (medium): h is blocked if Forget ⊢ h using only the pairing rules (r_pair, r_unpair)
+ * - Case 3 (strong): h is blocked if Forget ⊢ h using all Dolev-Yao rules
+ *
+ * The closures of Cases 2 and 3 are decided exactly by {@link DolevYaoDeducer}.
+ * Forgotten inference rules (Definition 5) are checked by {@link #forgottenRulesUsed}.
  */
 @Slf4j
 @Component
 public class BlockingChecker {
 
-    private static final int MAX_DEPTH = 10; // Prevent infinite recursion
+    /** Function symbols declared [private] in the loaded theory (cannot be composed). */
+    private Set<String> privateFunctions = Set.of();
+
+    public void setPrivateFunctions(Set<String> privateFunctions) {
+        this.privateFunctions = privateFunctions == null ? Set.of() : Set.copyOf(privateFunctions);
+    }
 
     /**
      * Checks if a hypothesis h is blocked according to the context's blocking mode.
@@ -31,166 +41,14 @@ public class BlockingChecker {
         if (h == null || ctx == null) return false;
 
         return switch (ctx.getBlockingMode()) {
-            case CASE1_WEAK -> isBlockedCase1(h, ctx.getForgetSet());
-            case CASE2_PAIRING -> isBlockedCase2(h, ctx.getForgetSet());
-            case CASE3_FULL_DY -> isBlockedCase3(h, ctx.getForgetSet());
+            case CASE1_WEAK -> ctx.getForgetSet().contains(h);
+            case CASE2_PAIRING -> deducer().derivable(h, ctx.getForgetSet(), DolevYaoDeducer.PAIRING_RULES);
+            case CASE3_FULL_DY -> deducer().derivable(h, ctx.getForgetSet(), DolevYaoDeducer.ALL_RULES);
         };
     }
 
-    /**
-     * Case 1 (weak): h is blocked if h ∈ Forget
-     */
-    private boolean isBlockedCase1(Message h, Set<Message> forgetSet) {
-        return forgetSet.contains(h);
-    }
-
-    /**
-     * Case 2 (medium): h is blocked if h is derivable from Forget using only pairing rules.
-     * This includes both:
-     * - Decomposition: projecting components from pairs (fst/snd)
-     * - Composition: building pairs from derivable components (pair introduction)
-     */
-    private boolean isBlockedCase2(Message h, Set<Message> forgetSet) {
-        return isDerivableUnderPairingRules(h, forgetSet, new HashSet<>(), MAX_DEPTH);
-    }
-
-    /**
-     * Checks if term is derivable from Forget using ONLY pairing rules.
-     * Per paper Case 2:
-     * - Decomposition: if (x,y) ∈ S, then x and y are derivable
-     * - Composition: if both x and y are derivable, then (x,y) is derivable
-     */
-    private boolean isDerivableUnderPairingRules(Message term, Set<Message> forgetSet,
-                                                  Set<String> visited, int depth) {
-        if (term == null || depth <= 0) return false;
-
-        String key = term.represent();
-        if (visited.contains(key)) return false;
-        visited.add(key);
-
-        // Direct membership in Forget
-        if (forgetSet.contains(term)) {
-            return true;
-        }
-
-        // Build decomposition closure: all components reachable by projection
-        Set<Message> decompositionClosure = buildPairingClosure(forgetSet);
-        if (decompositionClosure.contains(term)) {
-            return true;
-        }
-
-        // Composition: if term is a Pair, check if both components are derivable
-        if (term instanceof Pair p) {
-            Set<String> leftVisited = new HashSet<>(visited);
-            Set<String> rightVisited = new HashSet<>(visited);
-
-            boolean leftDerivable = isDerivableUnderPairingRules(p.getLeft(), forgetSet, leftVisited, depth - 1);
-            boolean rightDerivable = isDerivableUnderPairingRules(p.getRight(), forgetSet, rightVisited, depth - 1);
-
-            if (leftDerivable && rightDerivable) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Builds the closure of a set under pairing projections.
-     * If (x, y) is in the set, both x and y are added to the closure.
-     */
-    private Set<Message> buildPairingClosure(Set<Message> initial) {
-        Set<Message> closure = new LinkedHashSet<>(initial);
-        boolean changed = true;
-        int iterations = 0;
-
-        while (changed && iterations < MAX_DEPTH) {
-            changed = false;
-            iterations++;
-            Set<Message> toAdd = new LinkedHashSet<>();
-
-            for (Message m : closure) {
-                if (m instanceof Pair p) {
-                    if (!closure.contains(p.getLeft())) {
-                        toAdd.add(p.getLeft());
-                        changed = true;
-                    }
-                    if (!closure.contains(p.getRight())) {
-                        toAdd.add(p.getRight());
-                        changed = true;
-                    }
-                }
-            }
-            closure.addAll(toAdd);
-        }
-
-        return closure;
-    }
-
-    /**
-     * Case 3 (strong): h is blocked if h is derivable from Forget using all DY rules.
-     * This includes pairing, projections, encryption, decryption, etc.
-     */
-    private boolean isBlockedCase3(Message h, Set<Message> forgetSet) {
-        // Use the full DY derivation check with Forget as knowledge
-        return isDerivableFromSet(h, forgetSet, MAX_DEPTH, new HashSet<>());
-    }
-
-    /**
-     * Checks if target is derivable from the given set using DY rules.
-     */
-    private boolean isDerivableFromSet(Message target, Set<Message> knowledge, int depth, Set<String> visited) {
-        if (depth <= 0) return false;
-        if (target == null) return false;
-
-        String key = target.represent();
-        if (visited.contains(key)) return false;
-        visited.add(key);
-
-        // Direct membership
-        if (knowledge.contains(target)) {
-            return true;
-        }
-
-        // Projection: if any pair in knowledge contains target
-        for (Message m : knowledge) {
-            if (m instanceof Pair p) {
-                if (p.getLeft().equals(target) || p.getRight().equals(target)) {
-                    return true;
-                }
-            }
-        }
-
-        // Pairing: if target is a Pair, check if both components are derivable
-        if (target instanceof Pair p) {
-            if (isDerivableFromSet(p.getLeft(), knowledge, depth - 1, new HashSet<>(visited)) &&
-                isDerivableFromSet(p.getRight(), knowledge, depth - 1, new HashSet<>(visited))) {
-                return true;
-            }
-        }
-
-        // Decryption: if {target}_{k} is in knowledge and k is derivable
-        for (Message m : knowledge) {
-            if (m instanceof Encrypt enc && enc.getMsg().equals(target)) {
-                if (isDerivableFromSet(enc.getKey(), knowledge, depth - 1, new HashSet<>(visited))) {
-                    return true;
-                }
-            }
-        }
-
-        // Function application: if target is a function, check if all args are derivable
-        if (target instanceof PredictiveFunction func) {
-            boolean allDerivable = true;
-            for (Message arg : func.getArgs()) {
-                if (!isDerivableFromSet(arg, knowledge, depth - 1, new HashSet<>(visited))) {
-                    allDerivable = false;
-                    break;
-                }
-            }
-            if (allDerivable) return true;
-        }
-
-        return false;
+    private DolevYaoDeducer deducer() {
+        return new DolevYaoDeducer(privateFunctions);
     }
 
     /**
@@ -251,6 +109,21 @@ public class BlockingChecker {
      */
     public boolean hasBlockedHypotheses(Derivation derivation, ForgetContext ctx) {
         return !findBlockedHypotheses(derivation, ctx).isEmpty();
+    }
+
+    /** {@code Rules(π) ∩ R̄_H}: the forgotten inference rules a derivation needs (Definition 5). */
+    public Set<InferenceRule> forgottenRulesUsed(Derivation derivation, ForgetContext ctx) {
+        Set<InferenceRule> used = new TreeSet<>(DerivationRules.rulesOf(derivation));
+        used.retainAll(ctx.getForgottenRules());
+        return used;
+    }
+
+    /**
+     * A derivation is usable under forgetting iff none of its hypotheses is blocked
+     * (Definition 7) and it applies no forgotten rule (Definition 5).
+     */
+    public boolean isUsable(Derivation derivation, ForgetContext ctx) {
+        return !hasBlockedHypotheses(derivation, ctx) && forgottenRulesUsed(derivation, ctx).isEmpty();
     }
 }
 

@@ -1,0 +1,71 @@
+/****MODEL****/
+theory FreshK
+
+begin
+
+builtins: symmetric-encryption
+
+/****RULES****/
+
+/*
+ * The human generates ~r in User_2 and sends it encrypted under k. Forgetting
+ * the unrelated nonce n must not affect the send: ~r is generated fresh in the
+ * transition and belongs to the human's knowledge K^{i+1} (journal Sec. 3.4).
+ */
+rule humansetup:
+	[ Fr(~k), Fr(~n) ]
+	--[ OnlyOnce() ]->
+	[ !Type($User,'key',~k)
+	, !Type($User,'nonce',~n)
+	, !Init($User,$Server,~k,~n)
+	]
+
+rule Setup:
+	[ !Init($User,$Server,k,n) ]
+	--[ Setup($User)
+	  , Roles($User,$Server)
+	  ]->
+	[ State($User,'1',<$Server,k,n>)
+	, State($Server,'1',<$User,k>)
+	]
+
+rule User_1:
+	[ State($User,'1',<$Server,k,n>) ]
+	--[ H()
+	  , Send($User,'hello',n)
+	  , To($Server)
+	  ]->
+	[ State($User,'2',<$Server,k,n>)
+	, Out(n)
+	]
+
+rule User_2:
+	[ State($User,'2',<$Server,k,n>)
+	, Fr(~r)
+	]
+	--[ H()
+	  , Forget(n)
+	  , Send($User,'fresh',senc(~r,k))
+	  , To($Server)
+	  ]->
+	[ State($User,'3',<$Server,k,n,~r>)
+	, Out(senc(~r,k))
+	]
+
+rule Server_1:
+	[ State($Server,'1',<$User,k>)
+	, In(senc(r,k))
+	]
+	--[ Got($Server,r) ]->
+	[ State($Server,'2',<$User,k,r>) ]
+
+/****ENDOFRULES****/
+
+/****LEMMAS****/
+
+lemma Executable: exists-trace
+	"Ex s r #i. Got(s,r) @ #i"
+
+end
+
+/****ENDOFMODEL****/
