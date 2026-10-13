@@ -313,7 +313,7 @@ original code), the violated requirement, the fix and the regression test.
 | New audit tests on the **original** code | all failing as expected — see `docs/audit/before_fix_audit_results.txt` (e.g. Example 4: 1 derivation instead of 2; Example 5 Case 3: derivable instead of blocked; random differential: mismatches in both directions) |
 | New end-to-end regressions on a clean checkout of the original commit | `atomicBankUsesDerivations` (log: *"No derivations found for target senc(($Human, pw1), k(nH, nB)) - falling back to textual substitution"*), `freshValuesAreKnowledge`, `forgottenKeyNeglectsCheck`, `twoDistinctReplacements` fail; all procedural tests fail (feature absent) |
 | Tamarin 1.10.0 (Maude 3.2 from Ubuntu) well-formedness of the 2 inputs and 22 generated mutants (Bank: atomic, 6 procedural lapses, combined; Procedural fixture: 14 mutants) | all load and translate; 3 mutants report one warning: restriction `CheckSecret` references an action no rule has — the intended effect of NEGLECT removing the only `CheckSecret` (the restriction becomes vacuous) |
-| Tamarin proof of SG1 on the Bank models | see §5.2 |
+| Tamarin proofs on the Bank models | **not completed** — memory exhausted (§5.2) |
 
 New test classes: `DerivationEnumerationOracleTest` (11),
 `ForgetDerivabilityOracleTest` (2), `PaperExamplesTest` (8),
@@ -343,15 +343,33 @@ Full per-class counts: [`docs/audit/after_fix_test_results.txt`](docs/audit/afte
 
 ### 5.2 Tamarin
 
-(filled in below)
+Tamarin 1.10.0 (release binary) with Maude 3.2 from Ubuntu (Tamarin warns
+that 3.2 is not on its tested list but loads and translates every theory).
+
+* **Well-formedness: executed.** The two inputs and the 22 generated mutants
+  (Bank: atomic `Forget(pw1)`, `ForgetRule` for `r_adec`, `r_unpair`,
+  `r_pair`, `r_k`, `r_sdec` written two ways, combined `Forget(pw1)` +
+  `ForgetRule('r_k')`; Procedural fixture: 14 mutants) all load, translate and
+  close. The only warnings are the three NEGLECT cases described above
+  (vacuous restriction). The files must be read with a UTF-8 locale
+  (`LC_ALL=C.UTF-8`) because the Bank model contains non-ASCII comments.
+* **Proofs: attempted, not completed.** `--prove` of the Bank lemmas could not
+  finish in this container (4 CPUs, 16 GB). The all-traces SG1 lemma
+  (`Auth_B2_requires_H_intent`) was killed by the OS after 237 s. With a heap
+  cap, `Functional` (exists-trace) was still searching after more than 15
+  minutes, and `Attack_Forget_Exists` (exists-trace) on the atomic Bank mutant
+  ended with *heap exhausted* at 8 GB. **No proof or attack result is claimed.**
+  Whether the generated Bank mutant falsifies SG1 as reported in the paper
+  must still be checked on a machine with more memory, or with an oracle or
+  heuristic tuned for this model.
 
 ### Not executed / coverage gaps
 
 * **Haskell derivation service:** not available here. It does not influence
   Forget decisions in the code (only the unused `isDerivable`). Unchanged and
   untested.
-* **Tamarin `--prove` on all lemmas** of all mutants: not attempted beyond §5.2
-  (time).
+* **Tamarin `--prove`**: attempted on the Bank models and not completed for
+  lack of memory (§5.2); not attempted on the other mutants.
 * Randomised tests use a small signature (pairs, `senc`, `aenc`/`pk`, `h`) and
   nesting depth 2; larger terms are covered only by the hand-written cases.
 * Receiver matching for SKIP in In/Out-style models relies on the existing
