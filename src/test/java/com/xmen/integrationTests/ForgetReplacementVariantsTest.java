@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.xmen.config.CeremonyVocabulary;
 import com.xmen.utilities.MutationWorkspace;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -37,15 +38,22 @@ class ForgetReplacementVariantsTest {
 
   @Autowired private WebApplicationContext context;
   @Autowired private MutationWorkspace workspace;
+  @Autowired private CeremonyVocabulary vocabulary;
   private MockMvc mockMvc;
+  private CeremonyVocabulary savedVocabulary;
 
   @BeforeEach
   void setUp() {
     mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    // The vocabulary bean is hydrated from ~/.xmen/settings.json; run on the built-in defaults.
+    savedVocabulary = new CeremonyVocabulary();
+    savedVocabulary.copyFrom(vocabulary);
+    vocabulary.copyFrom(new CeremonyVocabulary());
   }
 
   @AfterEach
   void cleanUp() throws IOException {
+    vocabulary.copyFrom(savedVocabulary);
     for (Path p : outputs()) Files.deleteIfExists(p);
   }
 

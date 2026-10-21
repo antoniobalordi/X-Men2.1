@@ -103,7 +103,7 @@ public class VocabularyProfileStore {
     v.getFacts().setInboundChannels(new ArrayList<>(List.of("RcvS")));
     v.getActions().setCoreActions(new ArrayList<>(List.of(
         "Send", "Receive", "To", "H", "Fr", "Setup", "OnlyOnce", "Neq",
-        "Roles", "ChanSndS", "ChanRcvS", "Hfin", "Forget",
+        "Roles", "ChanSndS", "ChanRcvS", "Hfin", "Forget", "ForgetRule",
         "GateIn", "GateOut", "CommitGid", "Commit")));
     return v;
   }
@@ -115,7 +115,7 @@ public class VocabularyProfileStore {
     v.getFacts().setInboundChannels(new ArrayList<>(List.of("In")));
     v.getActions().setCoreActions(new ArrayList<>(List.of(
         "Send", "Receive", "To", "H", "Fr", "Setup", "OnlyOnce", "Neq",
-        "Roles", "Hfin", "Forget", "Commit", "Target",
+        "Roles", "Hfin", "Forget", "ForgetRule", "Commit", "Target",
         "U_LoginRequest", "PasswordAttempt", "B_Running",
         "LoginOK", "LoginFail", "LoginSuccess", "LoginFailed", "RevLtk")));
     return v;

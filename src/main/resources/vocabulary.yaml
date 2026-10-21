@@ -45,6 +45,8 @@ xmen:
 
     # ---------------------------------------------------------------
     # Fact families (what appears inside [ ... ] on either side of a rule)
+    # Tamarin's built-in Out, In and Fr are always recognised, even when a
+    # saved profile does not list them.
     # ---------------------------------------------------------------
     facts:
       state:                ["State"]

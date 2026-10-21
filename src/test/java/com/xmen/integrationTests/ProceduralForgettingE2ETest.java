@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -63,7 +64,7 @@ class ProceduralForgettingE2ETest {
     try (Stream<Path> s = Files.list(workspace.root())) {
       for (Path p : s.toList()) {
         String n = p.getFileName().toString();
-        if (n.matches("(Bank|Procedural|FreshK)_M\\d+\\.m")) Files.deleteIfExists(p);
+        if (n.matches("(Bank|BankThree|Procedural|FreshK)_M\\d+\\.m")) Files.deleteIfExists(p);
       }
     }
   }
@@ -216,6 +217,35 @@ class ProceduralForgettingE2ETest {
         .contains("Send($Human,'m3',senc(<$Human,pw2>,k(nH,nB)))")
         .contains("PasswordAttempt($Human,$B1,pw2,nH,nB)");
     assertThat(o.report()).contains("Decision: REPLACE").doesNotContain("legacy textual fallback");
+  }
+
+  @Test
+  @DisplayName("Bank models work under a vocabulary profile saved for another ceremony "
+      + "(SndS/RcvS channels only, no ForgetRule core action)")
+  void bankUnderForeignProfile() throws Exception {
+    CeremonyVocabulary invoicePayment = new CeremonyVocabulary();
+    invoicePayment.getFacts().setOutboundChannels(new ArrayList<>(List.of("SndS", "ChanSndS")));
+    invoicePayment.getFacts().setInboundChannels(new ArrayList<>(List.of("ChanRcvS", "RcvS")));
+    invoicePayment.getActions().setCoreActions(new ArrayList<>(List.of(
+        "SndS", "ChanSndS", "ChanRcvS", "RcvS", "Forget", "Fr", "OnlyOnce", "Neq", "Setup",
+        "Roles", "State", "Send", "H", "Receive", "To", "Hfin")));
+    vocabulary.copyFrom(invoicePayment);
+
+    String h2 = ruleText(harness.post(FORGET, "Bank.spthy", bank).onlyMutant(), "H_2_M");
+    assertThat(h2).contains("Out(senc(<$Human,pw2>,k(nH,nB)))")
+        .contains("PasswordAttempt($Human,$B1,pw2,nH,nB)");
+
+    ForgetEndpointHarness.Outcome adec = postBank("ForgetRule('r_adec')");
+    assertThat(ruleText(adec.onlyMutant(), "H_2_M")).doesNotContain("Out(senc(");
+    assertThat(adec.report()).contains("Decision: SKIP");
+
+    String three = Files.readString(Paths.get("src/test/resources/Forget_Bank_ThreePasswords.spthy"));
+    ForgetEndpointHarness.Outcome o = harness.post(FORGET, "BankThree.spthy", three);
+    assertThat(o.mutants()).hasSize(2);
+    assertThat(String.join("", o.mutants().values()))
+        .contains("Out(senc(<$Human,pw2>,k(nH,nB)))")
+        .contains("Out(senc(<$Human,pw3>,k(nH,nB)))")
+        .doesNotContain("Out(senc(<$Human,pw1>,k(nH,nB)))");
   }
 
   @Test

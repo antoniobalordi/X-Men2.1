@@ -318,7 +318,7 @@ original code), the violated requirement, the fix and the regression test.
 New test classes: `DerivationEnumerationOracleTest` (11),
 `ForgetDerivabilityOracleTest` (2), `PaperExamplesTest` (8),
 `ProceduralDerivationTest` (8), `InferenceRuleAndParserTest` (4),
-`ProceduralForgettingE2ETest` (15), `ForgetReplacementVariantsTest` (1),
+`ProceduralForgettingE2ETest` (16), `ForgetReplacementVariantsTest` (1),
 3 added cases in `ReplacementComputerTest`. Fixtures: `Forget_Procedural.spthy`,
 `Forget_FreshKnowledge.spthy`, `Forget_Bank_ThreePasswords.spthy`.
 

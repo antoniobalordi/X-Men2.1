@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Runtime-mutable ceremony vocabulary.
@@ -25,6 +26,15 @@ import java.util.*;
 @Data
 @NoArgsConstructor
 public class CeremonyVocabulary {
+
+  /*
+   * Tamarin's built-in network and fresh-name facts. Their meaning is fixed by Tamarin, so they
+   * are recognised whatever the active profile lists: a profile saved for a ceremony that uses
+   * other channel facts (e.g. SndS/RcvS) must not hide the In/Out messages of another model.
+   */
+  private static final String TAMARIN_OUT = "Out";
+  private static final String TAMARIN_IN = "In";
+  private static final String TAMARIN_FRESH = "Fr";
 
   private Actions actions = new Actions();
   private Facts facts = new Facts();
@@ -147,17 +157,17 @@ public class CeremonyVocabulary {
 
   @JsonIgnore
   public boolean isOutboundChannel(String name) {
-    return name != null && facts.outboundChannels.contains(name);
+    return name != null && (TAMARIN_OUT.equals(name) || facts.outboundChannels.contains(name));
   }
 
   @JsonIgnore
   public boolean isInboundChannel(String name) {
-    return name != null && facts.inboundChannels.contains(name);
+    return name != null && (TAMARIN_IN.equals(name) || facts.inboundChannels.contains(name));
   }
 
   @JsonIgnore
   public boolean isFreshFact(String name) {
-    return name != null && facts.fresh.contains(name);
+    return name != null && (TAMARIN_FRESH.equals(name) || facts.fresh.contains(name));
   }
 
   @JsonIgnore
@@ -165,10 +175,19 @@ public class CeremonyVocabulary {
     return name != null && name.startsWith(adornments.persistentPrefix);
   }
 
-  /** The set the Forget strategy uses to decide what is *not* an internal cognitive action. */
+  /**
+   * The set the Forget strategy uses to decide what is *not* an internal cognitive action: the
+   * core actions plus the vocabulary's own action names, so a profile saved before an action
+   * existed (e.g. ForgetRule) still classifies it correctly.
+   */
   @JsonIgnore
   public Set<String> nonInternalActions() {
-    return new LinkedHashSet<>(actions.coreActions);
+    Set<String> out = new LinkedHashSet<>(actions.coreActions);
+    Stream.of(actions.send, actions.receive, actions.forget, actions.forgetRule,
+            actions.humanMarker, actions.setup, actions.fresh)
+        .filter(Objects::nonNull)
+        .forEach(out::add);
+    return out;
   }
 
   /** Replace the entire state of this vocabulary (used by the Settings API). */
