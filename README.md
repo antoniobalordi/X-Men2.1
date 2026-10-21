@@ -2,7 +2,7 @@
 
 <img src="src/main/resources/images/Front-End-Logo.png" alt="X-Men logo" width="220"/>
 
-# X-Men 2.0
+# X-Men 2.1
 
 ### A Mutation-based Approach for the Formal Analysis of Security Ceremonies
 
@@ -28,7 +28,7 @@
 > ### 🚀 [**Section 1 — Quick Start (just use the app)**](#-section-1--quick-start-just-use-the-app)
 > *The easiest, fastest path to test the functionality. Download an installer, click through the prompts, upload a `.spthy`, hit Start Mutation. No JDK, no Git, no command line.*
 
-- [What X-Men 2.0 actually does (no jargon)](#-what-x-men-20-actually-does-no-jargon)
+- [What X-Men 2.1 does](#-what-x-men-20-actually-does-no-jargon)
   - [The 30-second mental model](#the-30-second-mental-model)
   - [The mutation menu — what each checkbox actually does](#the-mutation-menu--what-each-checkbox-actually-does)
   - [The end-to-end flow — step by step](#the-end-to-end-flow--step-by-step)
