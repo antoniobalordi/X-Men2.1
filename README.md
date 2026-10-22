@@ -283,6 +283,17 @@ may be combined in one rule. A rule that does not exist in the theory
 (e.g. `r_h` without `builtins: hashing`) is rejected with HTTP 400 and the list
 of rules available for that file.
 
+**Try the included example.** Upload
+[`src/test/resources/Forget_Procedural.spthy`](src/test/resources/Forget_Procedural.spthy),
+select **Forget Mutation**, leave the external Haskell option off, and click
+**Start Mutation**. The first human transition forgets symmetric decryption
+(`ForgetRule('r_sdec')`): X-Men removes the `CheckSecret(x)` check (**NEGLECT**)
+and the `h(x)` send (**SKIP**). The forgotten skill also blocks the later
+`h(z)` send. Download the two `.m` variants and the derivation report to inspect
+these decisions. To compare with a skill that is still available, remove the
+`ForgetRule('r_sdec')` line in a copy of the input: forgetting only `r_pair`
+in the second transition leaves its send intact.
+
 **What happens (Algorithm 1, lines 40–53).**
 
 1. The human still stores the received message; the rule is added to the set of
