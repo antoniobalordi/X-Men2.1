@@ -1,0 +1,81 @@
+
+==================== Forget analysis: rule H_3 ====================
+Lapse: forgotten messages [accNew], forgotten rules []
+Blocking case: CASE1_WEAK
+K^{i+1}: [$Human, $S, $B, ltkH, accOld, accNew, pkB, <svc,amt>]
+Forget^{i+1}: [accNew]
+R̄^{i+1} (forgotten rules): []
+m2: aenc(<<$Human,$B,$S,svc,amt,accNew>,sign(<$Human,$B,$S,svc,amt,accNew>,ltkH)>,pkB)
+
+Derivation report
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Knowledge size: 8
+Derivations found: 1
+Legend: (K) = taken from knowledge set
+
+
+DerivationTree #1
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt> (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt> (K)
+   |  |              \- accNew (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt> (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |              |  \- <svc, amt> (K)
+   |     |              \- accNew (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - <svc, amt> (K)
+   - accNew (K)
+   - ltkH (K)
+   - pkB (K)
+
+Per-derivation analysis (1 normal derivation(s)):
+  #1 Hyp=[$Human, $B, $S, <svc,amt>, accNew, ltkH, pkB] Rules=[r_aenc, r_pair, r_sign, r_unpair] blocked=[accNew] forgottenRulesUsed=[]
+Decision: REPLACE with 1 variant(s): [aenc(<<$Human,$B,$S,svc,amt,accOld>,sign(<$Human,$B,$S,svc,amt,accOld>,ltkH)>,pkB)]

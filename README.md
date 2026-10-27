@@ -146,6 +146,8 @@ Prover](https://tamarin-prover.github.io/) (or any tool that consumes
 > "what if the human messed up like *this*?" versions automatically, so you
 > can catch attacks that only show up when a human makes a mistake.
 
+A complete [invoice payment example](examples/invoice-payment/README.md) includes the original ceremony, its generated Forget variant, derivation report, Tamarin proofs, and counterexample traces.
+
 ### The mutation menu — what each checkbox actually does
 
 When you launch the app you see a panel of checkboxes. Here's what each one

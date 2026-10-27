@@ -1,0 +1,761 @@
+theory Invoice
+
+begin
+
+// Function signature and definition of the equational theory E
+
+functions: adec/2, aenc/2, fst/1, pair/2, pk/1, sign/2, snd/1, true/0,
+           verify/3
+equations:
+    adec(aenc(x.1, pk(x.2)), x.2) = x.1,
+    fst(<x.1, x.2>) = x.1,
+    snd(<x.1, x.2>) = x.2,
+    verify(sign(x.1, x.2), x.1, pk(x.2)) = true
+
+rule (modulo E) ChanSndS:
+   [ SndS( $A, $B, xt, x ) ]
+  --[ ChanSndS( $A, $B, xt, x ) ]->
+   [ Sec( $A, $B, xt, x ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) ChanRcvS:
+   [ Sec( $A, $B, xt, x ) ]
+  --[ ChanRcvS( $A, $B, xt, x ) ]->
+   [ RcvS( $A, $B, xt, x ) ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) humansetup:
+   [
+   Fr( ~ltkH ), Fr( ~ltkB ), Fr( ~accOld ), Fr( ~accNew ), Fr( ~svc ),
+   Fr( ~amt )
+   ]
+  --[
+  OnlyOnce( ), Neq( $S, $Human ), Neq( $S, $B ), Neq( $Human, $B ),
+  Neq( ~accOld, ~accNew )
+  ]->
+   [
+   !Type( $S, 'agentname', $S ), !Type( $Human, 'agentname', $Human ),
+   !Type( $B, 'agentname', $B ), !Type( $Human, 'account', ~accOld ),
+   !Type( $Human, 'account', ~accNew ), !Type( $Human, 'service', ~svc ),
+   !Type( $Human, 'amount', ~amt ), !Ltk( $Human, ~ltkH ),
+   !Pk( $Human, pk(~ltkH) ), !Ltk( $B, ~ltkB ), !Pk( $B, pk(~ltkB) ),
+   !Invoice( $S, $Human, $B, ~accOld, ~accNew, ~svc, ~amt ),
+   Out( pk(~ltkH) ), Out( pk(~ltkB) )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Setup:
+   [
+   !Invoice( $S, $Human, $B, accOld, accNew, svc, amt ),
+   !Ltk( $Human, ltkH ), !Ltk( $B, ltkB )
+   ]
+  --[ Setup( $Human ), Roles( $S, $Human, $B ) ]->
+   [
+   State( $S, '1', <$Human, accOld, accNew, svc, amt> ),
+   State( $Human, '1', <$S, $B, ltkH> ), State( $B, '1', <$Human, ltkB> )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) S_1:
+   [ State( $S, '1', <$Human, accOld, accNew, svc, amt> ) ]
+  --[
+  Send( $S, 'n1', accOld ), To( $Human ), Nominate( $S, $Human, accOld )
+  ]->
+   [
+   State( $S, '2', <$Human, accOld, accNew, svc, amt> ),
+   SndS( $S, $Human, 'account', accOld )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) S_2:
+   [ State( $S, '2', <$Human, accOld, accNew, svc, amt> ) ]
+  --[
+  Send( $S, 'n2', accNew ), To( $Human ), Nominate( $S, $Human, accNew ),
+  LostAccess( $S, accOld )
+  ]->
+   [
+   State( $S, '3', <$Human, accOld, accNew, svc, amt> ),
+   SndS( $S, $Human, 'accountchange', accNew )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) S_3:
+   [ State( $S, '3', <$Human, accOld, accNew, svc, amt> ) ]
+  --[
+  Send( $S, 'n3', <svc, amt> ), To( $Human ),
+  Reminder( $S, $Human, svc, amt )
+  ]->
+   [
+   State( $S, '4', <$Human, accOld, accNew, svc, amt> ),
+   SndS( $S, $Human, <'service', 'amount'>, <svc, amt> )
+   ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) H_1:
+   [
+   State( $Human, '1', <$S, $B, ltkH> ),
+   RcvS( $S, $Human, 'account', accOld )
+   ]
+  --[
+  H( ), Receive( $Human, 'n1', accOld ),
+  RecordAccount( $Human, $S, accOld )
+  ]->
+   [ State( $Human, '2', <$S, $B, ltkH, accOld> ) ]
+
+  // loop breaker: [1]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) H_2:
+   [
+   State( $Human, '2', <$S, $B, ltkH, accOld> ),
+   RcvS( $S, $Human, 'accountchange', accNew )
+   ]
+  --[
+  H( ), Receive( $Human, 'n2', accNew ),
+  RecordAccount( $Human, $S, accNew )
+  ]->
+   [ State( $Human, '3', <$S, $B, ltkH, accOld, accNew> ) ]
+
+  // loop breaker: [1]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) H_3_M:
+   [
+   State( $Human, '3', <$S, $B, ltkH, accOld, accNew> ),
+   RcvS( $S, $Human, <'service', 'amount'>, <svc, amt> ), !Pk( $B, pkB )
+   ]
+  --[
+  H( ), Receive( $Human, 'n3', <svc, amt> ),
+  Send( $Human, 'o1',
+        aenc(<<$Human, $B, $S, svc, amt, accOld>, 
+              sign(<$Human, $B, $S, svc, amt, accOld>, ltkH)>,
+             pkB)
+  ),
+  To( $B ), PaymentOrder( $Human, $B, $S, svc, amt, accOld )
+  ]->
+   [
+   State( $Human, '4', <$S, $B, ltkH, accOld, accNew, svc, amt> ),
+   SndS( $Human, $B, 'order',
+         aenc(<<$Human, $B, $S, svc, amt, accOld>, 
+               sign(<$Human, $B, $S, svc, amt, accOld>, ltkH)>,
+              pkB)
+   )
+   ]
+
+  // loop breaker: [1]
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) H_4_M:
+   [
+   State( $Human, '4', <$S, $B, ltkH, accOld, accNew, svc, amt> ),
+   !Pk( $B, pkB ),
+   RcvS( $B, $Human, 'approval',
+         aenc(<<'Approve', $B, $Human, order>, sigB>, pk(ltkH))
+   )
+   ]
+  --[
+  H( ), Receive( $Human, 'a1', <'Approve', $B, $Human, order> ),
+  Eq( verify(sigB, <'Approve', $B, $Human, order>, pkB), true ),
+  CheckApproval( order, <$Human, $B, $S, svc, amt, accOld> ),
+  WarningShown( $Human, $B ),
+  Confirmed( $Human, $B, $S, svc, amt, accOld ),
+  Send( $Human, 'c1',
+        aenc(<<'Confirm', $Human, $B, order>, 
+              sign(<'Confirm', $Human, $B, order>, ltkH)>,
+             pkB)
+  ),
+  To( $B )
+  ]->
+   [
+   State( $Human, '5', <$S, $B, ltkH, accOld, accOld, svc, amt> ),
+   SndS( $Human, $B, 'confirmation',
+         aenc(<<'Confirm', $Human, $B, order>, 
+               sign(<'Confirm', $Human, $B, order>, ltkH)>,
+              pkB)
+   )
+   ]
+
+  // loop breaker: [2]
+  /*
+  rule (modulo AC) H_4_M:
+     [
+     State( $Human, '4', <$S, $B, ltkH, accOld, accNew, svc, amt> ),
+     !Pk( $B, pkB ),
+     RcvS( $B, $Human, 'approval',
+           aenc(<<'Approve', $B, $Human, order>, sigB>, pk(ltkH))
+     )
+     ]
+    --[
+    H( ), Receive( $Human, 'a1', <'Approve', $B, $Human, order> ),
+    Eq( z, true ),
+    CheckApproval( order, <$Human, $B, $S, svc, amt, accOld> ),
+    WarningShown( $Human, $B ),
+    Confirmed( $Human, $B, $S, svc, amt, accOld ),
+    Send( $Human, 'c1',
+          aenc(<<'Confirm', $Human, $B, order>, 
+                sign(<'Confirm', $Human, $B, order>, ltkH)>,
+               pkB)
+    ),
+    To( $B )
+    ]->
+     [
+     State( $Human, '5', <$S, $B, ltkH, accOld, accOld, svc, amt> ),
+     SndS( $Human, $B, 'confirmation',
+           aenc(<<'Confirm', $Human, $B, order>, 
+                 sign(<'Confirm', $Human, $B, order>, ltkH)>,
+                pkB)
+     )
+     ]
+    variants (modulo AC)
+    1. $B    = $B.30
+       $Human
+             = $Human.31
+       order = order.37
+       pkB   = pkB.38
+       sigB  = sigB.39
+       z     = verify(sigB.39, <'Approve', $B.30, $Human.31, order.37>, pkB.38)
+    
+    2. $B    = $B.169
+       $Human
+             = $Human.170
+       order = order.176
+       pkB   = pk(x.336)
+       sigB  = sign(<'Approve', $B.169, $Human.170, order.176>, x.336)
+       z     = true
+    // loop breaker: [2]
+  */
+
+rule (modulo E) H_5:
+   [
+   State( $Human, '5', <$S, $B, ltkH, accOld, accNew, svc, amt> ),
+   RcvS( $B, $Human, 'result', 'PaymentExecuted' )
+   ]
+  --[ H( ), Hfin( $Human, 'PaymentExecuted' ), PaymentSuccess( $Human, $B )
+  ]->
+   [ ]
+
+  /* has exactly the trivial AC variant */
+
+rule (modulo E) Bank_1:
+   [
+   State( $B, '1', <$Human, ltkB> ), !Pk( $Human, pkH ),
+   RcvS( $Human, $B, 'order',
+         aenc(<<$Human, $B, s, svc, amt, acc>, sigH>, pk(ltkB))
+   )
+   ]
+  --[
+  Receive( $B, 'o1', <$Human, $B, s, svc, amt, acc> ),
+  Eq( verify(sigH, <$Human, $B, s, svc, amt, acc>, pkH), true ),
+  CheckOrder( $B, $Human, s, svc, amt, acc )
+  ]->
+   [
+   State( $B, '2', <$Human, ltkB, pkH, s, svc, amt, acc> ),
+   SndS( $B, $Human, 'approval',
+         aenc(<<'Approve', $B, $Human, $Human, $B, s, svc, amt, acc>, 
+               sign(<'Approve', $B, $Human, $Human, $B, s, svc, amt, acc>, ltkB)>,
+              pkH)
+   )
+   ]
+
+  // loop breaker: [2]
+  /*
+  rule (modulo AC) Bank_1:
+     [
+     State( $B, '1', <$Human, ltkB> ), !Pk( $Human, pkH ),
+     RcvS( $Human, $B, 'order',
+           aenc(<<$Human, $B, s, svc, amt, acc>, sigH>, pk(ltkB))
+     )
+     ]
+    --[
+    Receive( $B, 'o1', <$Human, $B, s, svc, amt, acc> ), Eq( z, true ),
+    CheckOrder( $B, $Human, s, svc, amt, acc )
+    ]->
+     [
+     State( $B, '2', <$Human, ltkB, pkH, s, svc, amt, acc> ),
+     SndS( $B, $Human, 'approval',
+           aenc(<<'Approve', $B, $Human, $Human, $B, s, svc, amt, acc>, 
+                 sign(<'Approve', $B, $Human, $Human, $B, s, svc, amt, acc>, ltkB)>,
+                pkH)
+     )
+     ]
+    variants (modulo AC)
+    1. $B    = $B.26
+       $Human
+             = $Human.27
+       acc   = acc.28
+       amt   = amt.29
+       pkH   = pkH.31
+       s     = s.32
+       sigH  = sigH.33
+       svc   = svc.34
+       z     = verify(sigH.33, <$Human.27, $B.26, s.32, svc.34, amt.29, acc.28>,
+                      pkH.31)
+    
+    2. $B    = $B.103
+       $Human
+             = $Human.104
+       acc   = acc.105
+       amt   = amt.106
+       pkH   = pk(x.204)
+       s     = s.109
+       sigH  = sign(<$Human.104, $B.103, s.109, svc.111, amt.106, acc.105>,
+                    x.204)
+       svc   = svc.111
+       z     = true
+    // loop breaker: [2]
+  */
+
+rule (modulo E) Bank_2:
+   [
+   State( $B, '2', <$Human, ltkB, pkH, s, svc, amt, acc> ),
+   RcvS( $Human, $B, 'confirmation',
+         aenc(<<'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>, sigC>,
+              pk(ltkB))
+   )
+   ]
+  --[
+  Receive( $B, 'c1', <'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>
+  ),
+  Eq( verify(sigC, <'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>,
+             pkH),
+      true
+  ),
+  CheckConf( $B, $Human, s, svc, amt, acc ),
+  Transfer( $B, $Human, s, svc, amt, acc )
+  ]->
+   [ SndS( $B, $Human, 'result', 'PaymentExecuted' ) ]
+
+  // loop breaker: [1]
+  /*
+  rule (modulo AC) Bank_2:
+     [
+     State( $B, '2', <$Human, ltkB, pkH, s, svc, amt, acc> ),
+     RcvS( $Human, $B, 'confirmation',
+           aenc(<<'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>, sigC>,
+                pk(ltkB))
+     )
+     ]
+    --[
+    Receive( $B, 'c1', <'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>
+    ),
+    Eq( z, true ), CheckConf( $B, $Human, s, svc, amt, acc ),
+    Transfer( $B, $Human, s, svc, amt, acc )
+    ]->
+     [ SndS( $B, $Human, 'result', 'PaymentExecuted' ) ]
+    variants (modulo AC)
+    1. $B    = $B.26
+       $Human
+             = $Human.27
+       acc   = acc.28
+       amt   = amt.29
+       pkH   = pkH.31
+       s     = s.32
+       sigC  = sigC.33
+       svc   = svc.34
+       z     = verify(sigC.33,
+                      <'Confirm', $Human.27, $B.26, $Human.27, $B.26, s.32, svc.34, amt.29, 
+                       acc.28>,
+                      pkH.31)
+    
+    2. $B    = $B.103
+       $Human
+             = $Human.104
+       acc   = acc.105
+       amt   = amt.106
+       pkH   = pk(x.204)
+       s     = s.109
+       sigC  = sign(<'Confirm', $Human.104, $B.103, $Human.104, $B.103, s.109, 
+                     svc.111, amt.106, acc.105>,
+                    x.204)
+       svc   = svc.111
+       z     = true
+    // loop breaker: [1]
+  */
+
+restriction OnlyOnce:
+  "∀ #i #j. ((OnlyOnce( ) @ #i) ∧ (OnlyOnce( ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ #i #j. ((OnlyOnce( ) @ #i) ∧ (OnlyOnce( ) @ #j)) ⇒ (#i = #j)"
+  */
+
+restriction OneSession:
+  "∀ h1 h2 #i #j. ((Setup( h1 ) @ #i) ∧ (Setup( h2 ) @ #j)) ⇒ (#i = #j)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ h1 h2 #i #j. ((Setup( h1 ) @ #i) ∧ (Setup( h2 ) @ #j)) ⇒ (#i = #j)"
+  */
+
+restriction Inequality:
+  "∀ x #i. (Neq( x, x ) @ #i) ⇒ (⊥)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ x #i. (Neq( x, x ) @ #i) ⇒ (⊥)"
+  */
+
+restriction Equality:
+  "∀ x y #i. (Eq( x, y ) @ #i) ⇒ (x = y)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ x y #i. (Eq( x, y ) @ #i) ⇒ (x = y)"
+  */
+
+restriction CheckApproval:
+  "∀ x y #i. (CheckApproval( x, y ) @ #i) ⇒ (x = y)"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ x y #i. (CheckApproval( x, y ) @ #i) ⇒ (x = y)"
+  */
+
+restriction notSameRole:
+  "∀ S H B #i.
+    (Roles( S, H, B ) @ #i) ⇒ (((¬(S = H)) ∧ (¬(S = B))) ∧ (¬(H = B)))"
+  // safety formula
+
+  /*
+  expanded formula:
+  "∀ S H B #i.
+    (Roles( S, H, B ) @ #i) ⇒ (((¬(S = H)) ∧ (¬(S = B))) ∧ (¬(H = B)))"
+  */
+
+lemma Payment_To_Latest_Nominated_Account:
+  all-traces
+  "∀ b h s svc amt acc #t.
+    (Transfer( b, h, s, svc, amt, acc ) @ #t) ⇒
+    (∃ #n #r.
+      ((((Nominate( s, h, acc ) @ #n) ∧ (Reminder( s, h, svc, amt ) @ #r)) ∧
+        (#n < #r)) ∧
+       (#r < #t)) ∧
+      (¬(∃ acc2 #n2.
+          ((Nominate( s, h, acc2 ) @ #n2) ∧ (#n < #n2)) ∧ (#n2 < #r))))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ b h s svc amt acc #t.
+  (Transfer( b, h, s, svc, amt, acc ) @ #t)
+ ∧
+  ∀ #n #r.
+   (Nominate( s, h, acc ) @ #n) ∧ (Reminder( s, h, svc, amt ) @ #r)
+  ⇒
+   ((¬(#n < #r)) ∨
+    (¬(#r < #t)) ∨
+    (∃ acc2 #n2. (Nominate( s, h, acc2 ) @ #n2) ∧ (#n < #n2) ∧ (#n2 < #r)))"
+*/
+simplify
+solve( State( $B, '2', <$Human, ltkB, pk(x), s, svc, amt, acc> ) ▶₀ #t )
+  case Bank_1_case_2
+  solve( RcvS( $Human, $B, 'confirmation',
+               aenc(<<'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>, 
+                     sign(<'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>, ~ltkH)>,
+                    pk(~ltkB))
+         ) ▶₁ #t )
+    case ChanRcvS_case_4
+    solve( RcvS( $Human, $B, 'order',
+                 aenc(<<$Human, $B, $S, svc, amt, acc>, 
+                       sign(<$Human, $B, $S, svc, amt, acc>, ~ltkH)>,
+                      pk(~ltkB))
+           ) ▶₂ #vr )
+      case ChanRcvS
+      solve( RcvS( $B, $Human, 'approval',
+                   aenc(<<'Approve', $B, $Human, $Human, $B, $S, svc, amt, acc>, 
+                         sign(<'Approve', $B, $Human, $Human, $B, $S, svc, amt, acc>, ~ltkB)>,
+                        pk(~ltkH))
+             ) ▶₂ #vr.5 )
+        case ChanRcvS
+        solve( RcvS( $S, $Human, <'service', 'amount'>, <svc, amt> ) ▶₁ #vr.6 )
+          case ChanRcvS_case_1
+          solve( RcvS( $S, $Human, 'accountchange', accNew.1 ) ▶₁ #vr.7 )
+            case ChanRcvS
+            solve( RcvS( $S, $Human, 'account', acc ) ▶₁ #vr.8 )
+              case ChanRcvS
+              solve( Nominate( $S, $Human, acc2 ) @ #n2 )
+                case S_2
+                solve( State( $S, '2', <$Human, accOld, acc2, svc, amt> ) ▶₀ #n2 )
+                  case S_1
+                  SOLVED // trace found
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Payment_Not_Into_Lost_Account:
+  all-traces
+  "∀ b h s svc amt acc #t #l.
+    (((Transfer( b, h, s, svc, amt, acc ) @ #t) ∧
+      (LostAccess( s, acc ) @ #l)) ∧
+     (#l < #t)) ⇒
+    (⊥)"
+/*
+guarded formula characterizing all counter-examples:
+"∃ b h s svc amt acc #t #l.
+  (Transfer( b, h, s, svc, amt, acc ) @ #t) ∧ (LostAccess( s, acc ) @ #l)
+ ∧
+  #l < #t"
+*/
+simplify
+solve( State( $B, '2', <$Human, ltkB, pk(x), $S, svc, amt, acc> ) ▶₀ #t )
+  case Bank_1_case_2
+  solve( State( $S, '2', <$Human, acc, accNew, svc, amt> ) ▶₀ #l )
+    case S_1
+    solve( RcvS( $Human, $B, 'confirmation',
+                 aenc(<<'Confirm', $Human, $B, $Human, $B, $S, svc.1, amt.1, ~accOld>, 
+                       sign(<'Confirm', $Human, $B, $Human, $B, $S, svc.1, amt.1, ~accOld>,
+                            ~ltkH)
+                      >,
+                      pk(~ltkB))
+           ) ▶₁ #t )
+      case ChanRcvS_case_4
+      solve( RcvS( $Human, $B, 'order',
+                   aenc(<<$Human, $B, $S, svc.1, amt.1, ~accOld>, 
+                         sign(<$Human, $B, $S, svc.1, amt.1, ~accOld>, ~ltkH)>,
+                        pk(~ltkB))
+             ) ▶₂ #vr )
+        case ChanRcvS
+        solve( RcvS( $B, $Human, 'approval',
+                     aenc(<<'Approve', $B, $Human, $Human, $B, $S, svc.1, amt.1, ~accOld>, 
+                           sign(<'Approve', $B, $Human, $Human, $B, $S, svc.1, amt.1, ~accOld>,
+                                ~ltkB)
+                          >,
+                          pk(~ltkH))
+               ) ▶₂ #vr.6 )
+          case ChanRcvS
+          solve( RcvS( $S, $Human, <'service', 'amount'>, <svc.1, amt.1>
+                 ) ▶₁ #vr.7 )
+            case ChanRcvS
+            solve( RcvS( $S, $Human, 'accountchange', accNew.1 ) ▶₁ #vr.8 )
+              case ChanRcvS
+              solve( RcvS( $S, $Human, 'account', ~accOld ) ▶₁ #vr.9 )
+                case ChanRcvS
+                SOLVED // trace found
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Transfer_Requires_Confirmation:
+  all-traces
+  "∀ b h s svc amt acc #t.
+    (Transfer( b, h, s, svc, amt, acc ) @ #t) ⇒
+    (∃ #o #c.
+      ((((PaymentOrder( h, b, s, svc, amt, acc ) @ #o) ∧
+         (WarningShown( h, b ) @ #c)) ∧
+        (Confirmed( h, b, s, svc, amt, acc ) @ #c)) ∧
+       (#o < #c)) ∧
+      (#c < #t))"
+/*
+guarded formula characterizing all counter-examples:
+"∃ b h s svc amt acc #t.
+  (Transfer( b, h, s, svc, amt, acc ) @ #t)
+ ∧
+  ∀ #o #c.
+   (PaymentOrder( h, b, s, svc, amt, acc ) @ #o) ∧
+   (WarningShown( h, b ) @ #c) ∧
+   (Confirmed( h, b, s, svc, amt, acc ) @ #c)
+  ⇒
+   ((¬(#o < #c)) ∨ (¬(#c < #t)))"
+*/
+simplify
+solve( State( $B, '2', <$Human, ltkB, pk(x), s, svc, amt, acc> ) ▶₀ #t )
+  case Bank_1_case_1
+  by solve( RcvS( $Human, $B, 'confirmation',
+                  aenc(<<'Confirm', $Human, $B, $Human, $B, s, svc.1, amt.1, acc>, 
+                        sign(<'Confirm', $Human, $B, $Human, $B, s, svc.1, amt.1, acc>, ~ltkH)>,
+                       pk(<~accOld, ~accNew, ~svc, ~amt>))
+            ) ▶₁ #t )
+next
+  case Bank_1_case_2
+  solve( RcvS( $Human, $B, 'confirmation',
+               aenc(<<'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>, 
+                     sign(<'Confirm', $Human, $B, $Human, $B, s, svc, amt, acc>, ~ltkH)>,
+                    pk(~ltkB))
+         ) ▶₁ #t )
+    case ChanRcvS_case_1
+    by solve( RcvS( $Human, $B, 'order',
+                    aenc(<<$Human, $B, $S, svc, amt, acc>, 
+                          sign(<$Human, $B, $S, svc, amt, acc>, ~ltkH)>,
+                         pk(~ltkB))
+              ) ▶₂ #vr )
+  next
+    case ChanRcvS_case_2
+    by solve( RcvS( $Human, $B, 'order',
+                    aenc(<<$Human, $B, $S, svc, amt, acc>, 
+                          sign(<$Human, $B, $S, svc, amt, acc>, ~ltkH)>,
+                         pk(~ltkB))
+              ) ▶₂ #vr )
+  next
+    case ChanRcvS_case_3
+    by contradiction /* from formulas */
+  next
+    case ChanRcvS_case_4
+    by contradiction /* from formulas */
+  qed
+qed
+
+lemma Lapse_Pays_Old_Account:
+  exists-trace
+  "∃ b h s svc amt accOld accNew #n1 #n2 #r #t.
+    (((((((Nominate( s, h, accOld ) @ #n1) ∧
+          (Nominate( s, h, accNew ) @ #n2)) ∧
+         (Reminder( s, h, svc, amt ) @ #r)) ∧
+        (Transfer( b, h, s, svc, amt, accOld ) @ #t)) ∧
+       (#n1 < #n2)) ∧
+      (#n2 < #r)) ∧
+     (#r < #t)) ∧
+    (¬(accOld = accNew))"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ b h s svc amt accOld accNew #n1 #n2 #r #t.
+  (Nominate( s, h, accOld ) @ #n1) ∧
+  (Nominate( s, h, accNew ) @ #n2) ∧
+  (Reminder( s, h, svc, amt ) @ #r) ∧
+  (Transfer( b, h, s, svc, amt, accOld ) @ #t)
+ ∧
+  (#n1 < #n2) ∧ (#n2 < #r) ∧ (#r < #t) ∧ (¬(accOld = accNew))"
+*/
+simplify
+solve( State( $S, '3', <$Human, accOld, accNew, svc, amt> ) ▶₀ #r )
+  case S_2_case_1
+  solve( State( $B, '2', <$Human, ltkB, pk(x), $S, ~svc, ~amt, accOld.1>
+         ) ▶₀ #t )
+    case Bank_1
+    solve( Nominate( $S, $Human, accOld.1 ) @ #n1 )
+      case S_1
+      solve( State( $S, '1', <$Human, accOld, accNew, svc, amt> ) ▶₀ #n1 )
+        case Setup
+        solve( Nominate( $S, $Human, accNew.3 ) @ #n2 )
+          case S_2
+          solve( State( $S, '2', <$Human, accOld.1, accNew.1, svc.1, amt.1>
+                 ) ▶₀ #n2 )
+            case S_1
+            solve( RcvS( $Human, $B, 'confirmation',
+                         aenc(<<'Confirm', $Human, $B, $Human, $B, $S, ~svc, ~amt, ~accOld>, 
+                               sign(<'Confirm', $Human, $B, $Human, $B, $S, ~svc, ~amt, ~accOld>, ~ltkH)
+                              >,
+                              pk(~ltkB))
+                   ) ▶₁ #t )
+              case ChanRcvS_case_4
+              solve( RcvS( $Human, $B, 'order',
+                           aenc(<<$Human, $B, $S, ~svc, ~amt, ~accOld>, 
+                                 sign(<$Human, $B, $S, ~svc, ~amt, ~accOld>, ~ltkH)>,
+                                pk(~ltkB))
+                     ) ▶₂ #vr.2 )
+                case ChanRcvS
+                solve( RcvS( $B, $Human, 'approval',
+                             aenc(<<'Approve', $B, $Human, $Human, $B, $S, ~svc, ~amt, ~accOld>, 
+                                   sign(<'Approve', $B, $Human, $Human, $B, $S, ~svc, ~amt, ~accOld>, ~ltkB)
+                                  >,
+                                  pk(~ltkH))
+                       ) ▶₂ #vr.5 )
+                  case ChanRcvS
+                  solve( RcvS( $S, $Human, <'service', 'amount'>, <~svc, ~amt> ) ▶₁ #vr.6 )
+                    case ChanRcvS
+                    solve( RcvS( $S, $Human, 'accountchange', accNew.1 ) ▶₁ #vr.7 )
+                      case ChanRcvS
+                      solve( RcvS( $S, $Human, 'account', ~accOld ) ▶₁ #vr.8 )
+                        case ChanRcvS
+                        SOLVED // trace found
+                      qed
+                    qed
+                  qed
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+lemma Functional:
+  exists-trace
+  "∃ b h s svc amt acc #t #i.
+    ((Transfer( b, h, s, svc, amt, acc ) @ #t) ∧
+     (PaymentSuccess( h, b ) @ #i)) ∧
+    (#t < #i)"
+/*
+guarded formula characterizing all satisfying traces:
+"∃ b h s svc amt acc #t #i.
+  (Transfer( b, h, s, svc, amt, acc ) @ #t) ∧ (PaymentSuccess( h, b ) @ #i)
+ ∧
+  #t < #i"
+*/
+simplify
+solve( State( $B, '2', <$Human, ltkB, pk(x), s, svc, amt, acc> ) ▶₀ #t )
+  case Bank_1_case_2
+  solve( State( $Human, '5', <$S, $B, ltkH, accOld, accNew, svc, amt>
+         ) ▶₀ #i )
+    case H_4_M_case_4
+    solve( RcvS( $B, $Human, 'result', 'PaymentExecuted' ) ▶₁ #i )
+      case ChanRcvS_case_2
+      solve( RcvS( $Human, $B, 'confirmation',
+                   aenc(<<'Confirm', $Human, $B, $Human, $B, s, svc.1, amt.1, acc>, 
+                         sign(<'Confirm', $Human, $B, $Human, $B, s, svc.1, amt.1, acc>, ~ltkH)>,
+                        pk(~ltkB))
+             ) ▶₁ #t )
+        case ChanRcvS
+        solve( RcvS( $Human, $B, 'order',
+                     aenc(<<$Human, $B, $S, svc, amt, acc>, 
+                           sign(<$Human, $B, $S, svc, amt, acc>, ~ltkH)>,
+                          pk(~ltkB))
+               ) ▶₂ #vr )
+          case ChanRcvS
+          solve( RcvS( $B, $Human, 'approval',
+                       aenc(<<'Approve', $B, $Human, $Human, $B, $S, svc, amt, acc>, 
+                             sign(<'Approve', $B, $Human, $Human, $B, $S, svc, amt, acc>, ~ltkB)>,
+                            pk(~ltkH))
+                 ) ▶₂ #vr.3 )
+            case ChanRcvS
+            solve( RcvS( $S, $Human, <'service', 'amount'>, <svc, amt> ) ▶₁ #vr.4 )
+              case ChanRcvS_case_1
+              solve( RcvS( $S, $Human, 'accountchange', accNew.1 ) ▶₁ #vr.5 )
+                case ChanRcvS
+                solve( RcvS( $S, $Human, 'account', acc ) ▶₁ #vr.6 )
+                  case ChanRcvS
+                  SOLVED // trace found
+                qed
+              qed
+            qed
+          qed
+        qed
+      qed
+    qed
+  qed
+qed
+
+/* All wellformedness checks were successful. */
+
+/*
+Generated from:
+Tamarin version 1.12.0
+Maude version 3.5.1
+Git revision: UNKNOWN, branch: UNKNOWN
+Compiled at: 2026-03-08 09:49:47.765662 UTC
+*/
+
+end
