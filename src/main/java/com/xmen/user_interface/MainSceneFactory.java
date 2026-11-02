@@ -55,6 +55,8 @@ public final class MainSceneFactory {
   private static final Map<String, File> cachedBackgroundFiles = new HashMap<>();
   private static final AtomicBoolean BACKGROUND_PREWARM_STARTED = new AtomicBoolean(false);
   private static final double FULL_BLEED_OVERSCAN = 48;
+  private static final double FOREGROUND_WIDTH = 1480;
+  private static final double MIN_FOREGROUND_SCALE = 0.75;
 
   /**
    * A MediaPlayer for the first background video, created during splash on the FX thread and
@@ -304,14 +306,31 @@ public final class MainSceneFactory {
     BorderPane content = new BorderPane();
     content.setPickOnBounds(false);
     content.setCenter(body);
-    // Preserve the original two-column layout and both original action rows.
-    // At smaller logical screen sizes the whole foreground scrolls instead of shrinking.
     StackPane foreground = new StackPane(content, bottomCluster);
     foreground.setId("originalLayout");
-    foreground.setMinWidth(1480);
-    foreground.setPrefWidth(1480);
-    foreground.setMinHeight(Region.USE_PREF_SIZE);
-    javafx.scene.control.ScrollPane scroll = new javafx.scene.control.ScrollPane(foreground);
+    javafx.scene.transform.Scale scale = new javafx.scene.transform.Scale(1, 1, 0, 0);
+    foreground.getTransforms().add(scale);
+    // Fit the complete page on laptop screens; keep scrolling below 75% for readable controls.
+    StackPane fitted = new StackPane(foreground) {
+      @Override protected double computeMinWidth(double height) {
+        return FOREGROUND_WIDTH * MIN_FOREGROUND_SCALE;
+      }
+      @Override protected double computeMinHeight(double width) {
+        return foreground.prefHeight(FOREGROUND_WIDTH) * MIN_FOREGROUND_SCALE;
+      }
+      @Override protected void layoutChildren() {
+        double designWidth = FOREGROUND_WIDTH;
+        double designHeight = foreground.prefHeight(designWidth);
+        double factor = Math.max(MIN_FOREGROUND_SCALE, Math.min(1,
+            Math.min(getWidth() / designWidth, getHeight() / designHeight)));
+        scale.setX(factor);
+        scale.setY(factor);
+        foreground.resizeRelocate(0, 0,
+            Math.max(designWidth, getWidth() / factor),
+            Math.max(designHeight, getHeight() / factor));
+      }
+    };
+    javafx.scene.control.ScrollPane scroll = new javafx.scene.control.ScrollPane(fitted);
     scroll.setId("mainScroll");
     scroll.getStyleClass().add("x-page-scroll");
     scroll.setFitToWidth(true);

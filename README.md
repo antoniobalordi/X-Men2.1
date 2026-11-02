@@ -146,6 +146,8 @@ Prover](https://tamarin-prover.github.io/) (or any tool that consumes
 > "what if the human messed up like *this*?" versions automatically, so you
 > can catch attacks that only show up when a human makes a mistake.
 
+A complete [invoice payment example](examples/invoice-payment/README.md) includes the original ceremony, its generated Forget variant, derivation report, Tamarin proofs, and counterexample traces.
+
 ### The mutation menu — what each checkbox actually does
 
 When you launch the app you see a panel of checkboxes. Here's what each one
@@ -282,6 +284,17 @@ listed (`ForgetRule('r_sdec','r_unpair')`), and `Forget(x)` and `ForgetRule(r)`
 may be combined in one rule. A rule that does not exist in the theory
 (e.g. `r_h` without `builtins: hashing`) is rejected with HTTP 400 and the list
 of rules available for that file.
+
+**Try the included example.** Upload
+[`src/test/resources/Forget_Procedural.spthy`](src/test/resources/Forget_Procedural.spthy),
+select **Forget Mutation**, leave the external Haskell option off, and click
+**Start Mutation**. The first human transition forgets symmetric decryption
+(`ForgetRule('r_sdec')`): X-Men removes the `CheckSecret(x)` check (**NEGLECT**)
+and the `h(x)` send (**SKIP**). The forgotten skill also blocks the later
+`h(z)` send. Download the two `.m` variants and the derivation report to inspect
+these decisions. To compare with a skill that is still available, remove the
+`ForgetRule('r_sdec')` line in a copy of the input: forgetting only `r_pair`
+in the second transition leaves its send intact.
 
 **What happens (Algorithm 1, lines 40–53).**
 

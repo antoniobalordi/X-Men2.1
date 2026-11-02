@@ -1692,7 +1692,7 @@
     -fx-opacity: 0.55;
 }
 
-/* Scroll the unchanged foreground when the display has fewer logical pixels. */
+/* Transparent fallback scroll for windows too small to fit readable controls. */
 .x-page-scroll {
     -fx-background-color: transparent;
     -fx-background: transparent;

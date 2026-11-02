@@ -38,10 +38,10 @@ class UiAdaptationTest extends ApplicationTest {
     for (int i = 0; i < 5; i++) { root.applyCss(); root.layout(); }
   }
 
-  @Test void originalLayoutIsPreservedAndAllOverflowCanBeScrolled() {
+  @Test void laptopScreensFitTheWholePageAndSmallWindowsCanStillScroll() {
     interact(() -> {
       layout(1920, 1040);
-      for (double[] size : new double[][] {{1920,1040}, {1280,752}, {1067,627}, {800,560}, {640,480}, {1920,1040}}) {
+      for (double[] size : new double[][] {{1920,1040}, {1512,900}, {1440,850}, {1280,752}, {1067,627}, {800,560}, {640,480}, {1920,1040}}) {
         for (boolean download : new boolean[] {false, true}) {
           Node d = root.lookup("#heroDownload");
           d.setVisible(download); d.setManaged(download);
@@ -70,6 +70,13 @@ class UiAdaptationTest extends ApplicationTest {
             }
           }
           assertTrue(scroll.getViewportBounds().getHeight() > 0);
+          if (size[0] >= 1280) {
+            assertTrue(foreground.getWidth() <= scroll.getViewportBounds().getWidth() + 1,
+                "Laptop page must fit horizontally at " + size[0] + "x" + size[1]);
+            assertTrue(foreground.getHeight() <= scroll.getViewportBounds().getHeight() + 1,
+                "Laptop page must fit vertically at " + size[0] + "x" + size[1]
+                    + ": content=" + foreground.getHeight() + ", viewport=" + scroll.getViewportBounds());
+          }
           scroll.setVvalue(1); scroll.setHvalue(1);
           layout(size[0], size[1]);
           Bounds content = foreground.localToScene(foreground.getLayoutBounds());
@@ -80,7 +87,21 @@ class UiAdaptationTest extends ApplicationTest {
           scroll.setVvalue(0); scroll.setHvalue(0);
         }
       }
-      layout(1920, 1080);
+      ((javafx.scene.control.CheckBox) root.lookup("#cbForget")).setSelected(true);
+      ((javafx.scene.control.RadioButton) root.lookup("#rbDerivationSpecified")).setSelected(true);
+      layout(1280, 752);
+      ScrollPane scroll = (ScrollPane) root.lookup("#mainScroll");
+      Bounds viewport = scroll.lookup(".viewport").localToScene(scroll.lookup(".viewport").getLayoutBounds());
+      for (String id : List.of("heroStart", "heroUpload", "heroDownload", "cbSkipS",
+          "tfDerivationDepth", "cbShowDerivationTree", "cbForgetHaskell", "cbNeglect")) {
+        Node control = root.lookup("#" + id);
+        assertNotNull(control, id);
+        Bounds bounds = control.localToScene(control.getLayoutBounds());
+        assertTrue(bounds.getMinX() >= viewport.getMinX() - 1 && bounds.getMaxX() <= viewport.getMaxX() + 1,
+            id + " must fit horizontally with specified depth");
+        assertTrue(bounds.getMinY() >= viewport.getMinY() - 1 && bounds.getMaxY() <= viewport.getMaxY() + 1,
+            id + " must fit vertically with specified depth");
+      }
       root.lookup(".x-hero-left").getParent().getParent().setOpacity(1);
       root.lookup("#heroMetrics").getParent().getParent().setOpacity(1);
       WritableImage image = root.snapshot(null, null);
