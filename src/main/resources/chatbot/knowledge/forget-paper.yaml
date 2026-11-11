@@ -1320,8 +1320,9 @@ entries:
       - Annotate the human rule with ForgetRule('r_sdec') (or r_pair, r_unpair, r_senc, r_aenc, r_adec, or r_f for a function f of the theory such as r_h).
       - The received message is still stored; the rule is added to the set of forgotten rules, which persists in later transitions.
       - Internal checks whose arguments can no longer be derived are neglected.
-      - The send is kept if some derivation uses no forgotten rule and no forgotten message; otherwise it is skipped.
-      - A forgotten rule never triggers Replace, because substituting values cannot give back a skill.
+      - The send is kept if some derivation uses no forgotten rule and no forgotten message.
+      - Otherwise the components of the send that the human can no longer derive (e.g. a value that could only be obtained by decryption) are replaced by known values with the same format and label (Replace); if the forgotten rule is needed to build the message itself, the send is skipped.
+      - The lapse persists, because Algorithm 1 is applied at every later transition, so forgetting how to decrypt the account-change notice changes the payment order sent at the next transition.
     why: |
       Atomic forgetting (Forget(x)) blocks derivations that use a forgotten message as a hypothesis; procedural forgetting blocks derivations that apply a forgotten rule.
     related: [paper.forget.definition, paper.forget.algorithm, paper.forget.blocked-derivations]

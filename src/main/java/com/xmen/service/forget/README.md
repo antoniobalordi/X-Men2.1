@@ -119,12 +119,12 @@ Mutation decision (keep / substitute / skip + neglect)
 
 ## ⚙️ At runtime
 
-For each transition that contains `Forget(x)`:
+For each human transition from the first `Forget(x)` / `ForgetRule(r)` on (lapses persist):
 
 1. `ForgetContext` is built (or reused) with the current `K`, Forget set, and blocking mode.
 2. `ForgetDerivationChecker` asks: *can `m₂` be derived without blocked hypotheses?*
 3. If yes → keep the send unchanged.
-4. If no → `ReplacementComputer` finds type-compatible replacements and emits variants.
+4. If no → `ReplacementComputer` replaces the components of `m₂` the human cannot derive by type-compatible values of `K`; variants the human can derive are emitted.
 5. If no replacement exists → the send is skipped and matching internal actions are Neglected.
 
 ## 📨 Forget-specific headers

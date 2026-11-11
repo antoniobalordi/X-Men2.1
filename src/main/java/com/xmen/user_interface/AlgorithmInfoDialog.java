@@ -56,9 +56,11 @@ public final class AlgorithmInfoDialog {
                 + "every term blocked by the Forget set and every forgotten rule, the original "
                 + "send stays unchanged."),
         step("6.", "Otherwise, find a type-compatible replacement",
-            "Only for a forgotten message: search K for a candidate with the same format "
-                + "(atom/pair/encrypt/function) and the same label as x. For passwords this "
-                + "typically means: another password. A forgotten rule is never replaced."),
+            "Collect the parts of m₂ the human can no longer derive — forgotten, never stored, "
+                + "or obtainable only with a forgotten rule — and search K for candidates with "
+                + "the same format (atom/pair/encrypt/function) and label. For passwords this "
+                + "typically means: another password. A variant counts only if the human can "
+                + "derive it."),
         step("7.", "Substitute x → replacement everywhere it appears in the rule",
             "Rewrite the Send action, the Out postcondition, and any witness action "
                 + "(e.g. PasswordAttempt) so the trace truthfully records what the agent did. "
@@ -70,8 +72,9 @@ public final class AlgorithmInfoDialog {
                 + "lapse. The mutation produces a partial trace where the human could not proceed."),
         step("9.", "Emit a mutated .m file Tamarin can analyse",
             "Suffix the rule name with _M to make the mutation visible and write the new "
-                + "theory to disk. The file is packaged in the response zip alongside the "
-                + "(optional) derivation tree.")
+                + "theory to disk. After the first lapse, steps 2-8 are repeated for every later "
+                + "human transition, so all lapses accumulate in the same file. The file is "
+                + "packaged in the response zip alongside the (optional) derivation tree.")
     );
 
     ScrollPane scroll = new ScrollPane(steps);

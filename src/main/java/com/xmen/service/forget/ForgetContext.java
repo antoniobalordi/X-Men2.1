@@ -62,7 +62,21 @@ public class ForgetContext {
     public ForgetContext copy() {
         ForgetContext c = new ForgetContext(this.knowledge, this.forgetSet, this.forgottenRules, this.blockingMode, this.typeMap);
         c.publicKnowledge.addAll(this.publicKnowledge);
+        c.lapsed = this.lapsed;
         return c;
+    }
+
+    // A lapse has occurred at an earlier transition. From then on, a value of the agent state is in K
+    // only if the human can still obtain it ([[K]]^μ of Algorithm 1): a lapse of case (1) changes
+    // neither K nor Forget, so it is recorded here.
+    private boolean lapsed;
+
+    public boolean hasLapsed() {
+        return lapsed;
+    }
+
+    public void markLapsed() {
+        lapsed = true;
     }
 
     /**

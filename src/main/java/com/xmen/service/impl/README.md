@@ -88,7 +88,7 @@ service/ (interfaces)
   1. Build / update `ForgetContext` per transition.
   2. Extract `m₂`; ask the derivation engine for all derivations.
   3. If an unblocked derivation exists → keep the send.
-  4. Otherwise → compute type-compatible replacements, substitute throughout the rule (Send, Out, witness actions), and remove the `Forget(...)` action.
+  4. Otherwise → replace the components of `m₂` the human can no longer derive (forgotten, never stored, or only obtainable with a forgotten rule) by type-compatible values of `K`, keeping the variants the human can derive; substitute throughout the rule (Send, Out, witness actions). From the first lapse on, steps 1-5 run at every later human transition of the same run (`ForgetRun`).
   5. If no replacement exists → Skip the send + Neglect internal actions that used the forgotten term.
 - **🪝 Depends on:** `ForgetContext`, `BlockingChecker`, `ReplacementComputer`, `ForgetDerivationChecker`, `DerivationCheckService`.
 - **⚠️ Heads-up:** This is the most semantically dense file in the project — coordinate changes with the paper.

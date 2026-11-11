@@ -43,6 +43,10 @@ public class ParametersBundle {
   // Transition-aware forget context for a single mutation run (non-serialized).
   transient ForgetContext forgetContext;
 
+  // Forget mutation: the runs started by the first lapse (null before it). Their theories are the
+  // Forget entries of collections.
+  transient java.util.List<com.xmen.service.forget.ForgetRun> forgetRuns;
+
   // Indicates whether variants were truncated due to per-rule cap.
   boolean variantsTruncated = false;
 
