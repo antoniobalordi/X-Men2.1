@@ -96,24 +96,24 @@ rule H_2_M:
 
 rule H_3_Granted:
 [ State($Human,'3',<$B1,$B2,nH,nB,pw1,pw2>)
-, In('Granted')
+, In(<'status','Granted'>)
 ]
 --[ H()
 , Hfin($Human,'Granted')
 , LoginSuccess($Human,$B1)
 ]->
-[
+[ 
 ]
 
 rule H_3_Denied:
 [ State($Human,'3',<$B1,$B2,nH,nB,pw1,pw2>)
-, In('Denied')
+, In(<'status','Denied'>)
 ]
 --[ H()
 , Hfin($Human,'Denied')
 , LoginFailed($Human,$B1)
 ]->
-[
+[ 
 ]
 
 rule Bank_1:
@@ -138,7 +138,7 @@ rule Bank_2_OK:
 , Receive($B,'m3',<$Human,pw>)
 , Commit($B,$Human,'login')
 ]->
-[ Out('Granted')
+[ Out(<'status','Granted'>)
 ]
 
 rule Bank_2_Fail:
@@ -149,7 +149,7 @@ rule Bank_2_Fail:
 --[ LoginFail($B,$Human)
 , Neq(pw,storedPw)
 ]->
-[ Out('Denied')
+[ Out(<'status','Denied'>)
 ]
 
 
@@ -171,13 +171,15 @@ restriction notSameRole:
 
 /****LEMMAS****/
 
-/* SECURITY GOAL — violated by the forget attack.
+/* [SG1] -- paper Listing 1. SECURITY GOAL — violated by the forget attack.
    B2 should grant access only when H explicitly addressed B2.
    Tamarin should find a counterexample (the attack trace). */
-lemma Auth_B2_requires_H_intent: all-traces
-	"All u b2 pw #i.
-	   LoginOK(b2,u,pw) @ #i
-	   ==> Ex nH #j. U_LoginRequest(u,b2,nH) @ #j & #j < #i"
+lemma Human_intends_Bank2_if_Bank2_OK: all-traces
+"All u b2 pw #i.
+    LoginOK(b2, u, pw) @ #i
+    ==> (Ex nH #j.
+         U_LoginRequest(u, b2, nH) @ #j
+         & #j < #i)"
 
 /* CONDITIONAL SAFETY — should HOLD.
    The password-reuse attack requires B1 to be compromised;
@@ -199,14 +201,14 @@ lemma Attack_Forget_Exists: exists-trace
 	 & RevLtk(b1) @ #k
 	 & not b1 = b2"
 
-/* PASSWORD CONFIDENTIALITY — should HOLD.
+/* [SG2] -- paper Listing 2. PASSWORD CONFIDENTIALITY — should HOLD.
    The attacker never learns the password used in the final
    message, because m3 is encrypted with k(nH,nB) and the
    attacker does not know nB (generated fresh by B2). */
-lemma Password_Confidentiality: all-traces
-	"All u b nH nB pw #i.
-	   PasswordAttempt(u,b,pw,nH,nB) @ #i
-	   ==> not (Ex #t. K(pw) @ #t)"
+lemma Password2_confidential: all-traces
+"All u b pw nH nB #i.
+    PasswordAttempt(u, b, pw, nH, nB) @ #i
+    ==> not (Ex #t. K(pw) @ #t)"
 
 /* FUNCTIONAL — a successful login is reachable. */
 lemma Functional: exists-trace

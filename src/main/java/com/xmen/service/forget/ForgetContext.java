@@ -62,7 +62,21 @@ public class ForgetContext {
     public ForgetContext copy() {
         ForgetContext c = new ForgetContext(this.knowledge, this.forgetSet, this.forgottenRules, this.blockingMode, this.typeMap);
         c.publicKnowledge.addAll(this.publicKnowledge);
+        c.lapsed = this.lapsed;
         return c;
+    }
+
+    // A lapse has occurred at an earlier transition. From then on, a value of the agent state is in K
+    // only if the human can still obtain it ([[K]]^μ of Algorithm 1): a lapse of case (1) changes
+    // neither K nor Forget, so it is recorded here.
+    private boolean lapsed;
+
+    public boolean hasLapsed() {
+        return lapsed;
+    }
+
+    public void markLapsed() {
+        lapsed = true;
     }
 
     /**
@@ -70,7 +84,9 @@ public class ForgetContext {
      * Per Algorithm 1:
      * - If m == m1 (lines 3-6): K, Forget and R̄ stay unchanged; m1 is not added to K
      * - If m != m1 (lines 7-10): K ∪ {m1}, Forget ∪ {m}
-     * - Re-acquisition (Sec. 4.3): a message that is received (and stored) leaves the Forget set
+     * - If nothing is forgotten (lines 16-19): K ∪ {m1}, Forget unchanged
+     * In no case does a message leave the Forget set (lines 9, 14, 18): receiving a forgotten
+     * message again does not make it usable again.
      *
      * @param m1 the received message
      * @param m the message being forgotten (null if no forget at this transition)
@@ -86,13 +102,10 @@ public class ForgetContext {
             if (m1 != null) {
                 knowledge.add(m1);
             }
-            // If forgetting something else, add it to Forget
+            // If forgetting something else, add it to Forget (line 9); otherwise Forget is unchanged
+            // (lines 14, 18), even when m1 itself was forgotten earlier.
             if (m != null) {
                 forgetSet.add(m);
-            }
-            // Unforget-on-receive: if m1 was in Forget, remove it
-            if (m1 != null) {
-                forgetSet.remove(m1);
             }
         }
     }

@@ -16,8 +16,10 @@ summary of summaries:
 analyzed: examples/invoice-payment/Forget_Invoice_Input.spthy
 
   output:          examples/invoice-payment/original-proved.spthy
-  processing time: 4.20s
+  processing time: 5.16s
   
+  Transfer_as_confirmed (all-traces): verified (8 steps)
+  Transfer_to_latest_account (all-traces): verified (25 steps)
   Payment_To_Latest_Nominated_Account (all-traces): verified (25 steps)
   Payment_Not_Into_Lost_Account (all-traces): verified (27 steps)
   Transfer_Requires_Confirmation (all-traces): verified (8 steps)

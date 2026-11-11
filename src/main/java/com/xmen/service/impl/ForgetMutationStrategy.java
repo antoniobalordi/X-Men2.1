@@ -11,6 +11,7 @@ import com.xmen.service.forget.BlockingChecker;
 import com.xmen.service.forget.ForgetContext;
 import com.xmen.service.forget.ForgetContext.BlockingMode;
 import com.xmen.service.forget.ForgetDerivationChecker;
+import com.xmen.service.forget.ForgetRun;
 import com.xmen.service.forget.ReplacementComputer;
 import com.xmen.utilities.SetupKnowledgeExtractor;
 import com.xmen.utilities.UtilityFunctions;
@@ -21,15 +22,20 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 /**
- * ForgetMutationStrategy implements Algorithm 1 of the journal manuscript:
+ * ForgetMutationStrategy implements Algorithm 1 of the journal manuscript (version of November
+ * 2026: Phase 1 updates K, Forget and R̄; Phase 2 applies the effect of every lapse so far):
  * - Maintains K (knowledge) as monotonic (never shrinks)
  * - Tracks the Forget set (forgotten messages) and R̄ (forgotten inference rules) separately
- * - Atomic forgetting: Forget(m) annotations (Definition 4, cases 1-2; lines 1-39)
- * - Procedural forgetting: ForgetRule(r) annotations (Definition 4 case 3, Definition 5;
- *   lines 40-53) — derivations applying a forgotten rule are unusable, and a forgotten rule
- *   never triggers REPLACE
+ * - Atomic forgetting: Forget(m) annotations (Definition 4, cases 1-2)
+ * - Procedural forgetting: ForgetRule(r) annotations (Definition 4 case 3, Definition 5) —
+ *   derivations applying a forgotten rule are unusable
+ * - Applied at every human transition after the first lapse: lapses persist and accumulate in
+ *   one mutated specification per run (see {@link ForgetRun})
  * - Checks for usable derivations before mutating (exact decision, see ForgetDerivationChecker)
- * - Generates variants by replacing blocked hypotheses
+ * - REPLACE: replaces the atomic components of m2 that H cannot derive under forgetting —
+ *   forgotten, never added, or obtainable only with a forgotten rule — by admissible values of K
+ *   (lines 28-40); a forgotten rule therefore triggers REPLACE when it leaves a component of m2
+ *   underivable, and SKIP when it is needed to build m2 itself
  * - Removes send + matching receive when no variants exist
  *
  * Supports three blocking cases:
@@ -145,29 +151,20 @@ public class ForgetMutationStrategy implements MutationStrategy {
 
   /**
    * Applies the FORGET mutation to one human transition, following Algorithm 1 of the journal
-   * manuscript.
+   * manuscript (version of November 2026).
    *
-   * <p>Lapses are declared in the transition by annotations: {@code Forget(m)} (atomic forgetting,
-   * lines 2-39) and {@code ForgetRule(r)} (procedural forgetting, lines 40-53). The Forget context
-   * (K, Forget, R̄) persists across the human transitions of one run.
+   * <p>Lapses are declared by annotations on human rules: {@code Forget(m)} (Definition 4, cases 1
+   * and 2) and {@code ForgetRule(r)} (case 3). Before the first lapse only the knowledge is tracked.
+   * The first lapse starts a run (one mutated specification and the human's context K, Forget,
+   * R̄); from then on Algorithm 1 is applied to <em>every</em> human transition of the run, so an
+   * earlier lapse also affects later sends and checks, and all lapses of the input accumulate in
+   * the same mutated specification. A REPLACE with several variants branches the run; each run
+   * is one output theory.
    *
-   * <ol>
-   *   <li>State update: K^{i+1} = K^i ∪ {m1} ∪ fresh (unless m1 itself is forgotten),
-   *       Forget ∪ {m}, R̄ ∪ {r}.</li>
-   *   <li>NEGLECT every internal action that needs a forgotten message or rule (lines 12-14,
-   *       44-46); the send decision is still taken afterwards.</li>
-   *   <li>Preserve the send if some normal derivation of m2 has no blocked hypothesis and uses no
-   *       forgotten rule (Definitions 5 and 7; lines 16 and 48).</li>
-   *   <li>Otherwise, for a forgotten message, REPLACE: one variant per combination of admissible
-   *       replacements of the blocked hypotheses of each derivation (lines 19-35); a forgotten
-   *       rule triggers no REPLACE.</li>
-   *   <li>Otherwise SKIP the send and remove the matching receive (lines 36-38, 51).</li>
-   * </ol>
-   *
-   * @param rule The rule to mutate.
-   * @param rules The list of rules to consider for mutation.
-   * @param parametersBundle The parameters bundle containing additional information for mutation.
-   * @return The updated parameters bundle after applying the mutation.
+   * @param rule The human rule of the original specification (its name identifies the transition).
+   * @param rules The original specification.
+   * @param parametersBundle The parameters bundle; its collections receive the run theories.
+   * @return The updated parameters bundle.
    */
   @Override
   public ParametersBundle applyMutation(
@@ -199,30 +196,111 @@ public class ForgetMutationStrategy implements MutationStrategy {
       ctx.setTypeMap(setup);
     }
 
-    // K^i: the knowledge accumulated so far together with the agent state this transition
-    // starts from (pre-State payload, own name, values read from persistent premises).
-    ctx.addAllKnowledge(knowledgeAtState(rule));
-    Message receivedMessage = extractReceivedMessage(rule);
-    Set<Message> fresh = freshValues(rule);
-
-    Set<String> forgetSet = parametersBundle.getForgetMutationSet().get(rule.getRule_name());
-    if (forgetSet == null) forgetSet = Collections.emptySet();
-    Set<InferenceRule> rulesForgottenNow = parametersBundle.getForgetRuleSet().get(rule.getRule_name());
-    if (rulesForgottenNow == null) rulesForgottenNow = Collections.emptySet();
-
-    if (forgetSet.isEmpty() && rulesForgottenNow.isEmpty()) {
-      ctx.updateForTransition(receivedMessage, null);
-      ctx.addAllKnowledge(fresh);
-      parametersBundle.setForgetContext(ctx);
+    String name = rule.getRule_name();
+    // Forgetting is local to the human who lapses (Sec. "Defining the Forget mutation"): every
+    // other agent, even one whose rules are marked H(), keeps all its knowledge and rules.
+    String lapsingAgent = lapsingAgent(rules, parametersBundle);
+    String agent = agentOf(rule);
+    if (lapsingAgent != null && agent != null && !agent.equals(lapsingAgent)) {
+      if (!forgottenMessagesAt(name, parametersBundle).isEmpty()
+          || !forgottenRulesAt(name, parametersBundle).isEmpty()) {
+        throw new IllegalArgumentException("Forget annotations on transitions of two agents ("
+            + lapsingAgent + " and " + agent + " in rule " + name + ") are not supported: the "
+            + "Forget mutation models the memory lapses of one human.");
+      }
       return parametersBundle;
     }
+    List<ForgetRun> runs = parametersBundle.getForgetRuns();
+    List<ArrayList<Rule>> previousTheories = new ArrayList<>();
+    if (runs == null) {
+      if (forgottenMessagesAt(name, parametersBundle).isEmpty()
+          && forgottenRulesAt(name, parametersBundle).isEmpty()) {
+        // No lapse so far: K^{i+1} = K^i ∪ {m1} ∪ fresh (lines 17-19)
+        ctx.addAllKnowledge(knowledgeAtState(rule));
+        ctx.updateForTransition(extractReceivedMessage(rule), null);
+        ctx.addAllKnowledge(freshValues(rule));
+        return parametersBundle;
+      }
+      // The first lapse starts the run from the original specification.
+      runs = List.of(new ForgetRun(deepCloneTheory(rules), ctx));
+    } else {
+      for (ForgetRun run : runs) previousTheories.add(run.theory());
+    }
 
-    // Successor state without any lapse (used to decide what the lapse makes impossible).
-    ForgetContext withoutLapse = ctx.copy();
-    withoutLapse.updateForTransition(receivedMessage, null);
-    withoutLapse.addAllKnowledge(fresh);
+    List<ForgetRun> next = new ArrayList<>();
+    for (int k = 0; k < runs.size(); k++) {
+      ForgetRun run = runs.get(k);
+      Rule current = findCurrentRule(run.theory(), name);
+      if (current == null) {
+        next.add(run);
+        continue;
+      }
+      next.addAll(applyToTransition(current, name, run, parametersBundle, runs.size() > 1 ? k : -1));
+    }
 
-    // ===== State update: Algorithm 1 lines 2-11 (messages) and 40-43 (rules) =====
+    parametersBundle.setForgetRuns(next);
+    if (!next.isEmpty()) parametersBundle.setForgetContext(next.get(0).ctx());
+    // Replace this mutation's theories in collections (other strategies' entries are kept).
+    parametersBundle.getCollections().removeIf(c -> previousTheories.stream().anyMatch(p -> p == c));
+    for (ForgetRun run : next) parametersBundle.getCollections().add(run.theory());
+    return parametersBundle;
+  }
+
+  /**
+   * Algorithm 1 on one transition of one run. {@code current} is the transition's rule in the
+   * run's specification (already affected by the earlier mutations and their propagation).
+   *
+   * <ol>
+   *   <li>Phase 1 (lines 2-20): K^i is the knowledge of the run; after a lapse a value of the
+   *       pre-State payload belongs to K only if H can still obtain it. Then K^{i+1}, Forget^{i+1}
+   *       and R̄^{i+1} are updated for the lapse of this transition, if any.</li>
+   *   <li>Phase 2 (lines 21-44), for every lapse up to this transition: NEGLECT each internal
+   *       action that the lapses make impossible; preserve the send if m2 is derivable under
+   *       forgetting; otherwise REPLACE the underivable components of m2
+   *       ({@link #computeComponentVariants}) or, if no variant is derivable, SKIP the send.</li>
+   * </ol>
+   *
+   * <p>On a transition without a lapse of its own, only what the lapses broke is changed: a send
+   * that is not derivable even without any lapse is left alone (incomplete knowledge extraction,
+   * not an effect of forgetting).
+   */
+  private List<ForgetRun> applyToTransition(Rule current, String name, ForgetRun run,
+                                            ParametersBundle parametersBundle, int runIndex) {
+    ForgetContext ctx = run.ctx();
+    Set<String> forgetSet = forgottenMessagesAt(name, parametersBundle);
+    Set<InferenceRule> rulesForgottenNow = forgottenRulesAt(name, parametersBundle);
+    boolean annotated = !forgetSet.isEmpty() || !rulesForgottenNow.isEmpty();
+    for (String forgotten : forgetSet) {
+      removeForgetMutation(current, canonicalize(forgotten));
+    }
+
+    // ===== Phase 1: K^i, then the lapse of this transition (lines 2-20) =====
+    Set<Message> payload = statePayloadKnowledge(current);
+    Set<Message> premises = premiseKnowledge(current);
+    Message receivedMessage = extractReceivedMessage(current);
+    Set<Message> fresh = freshValues(current);
+    // The knowledge of this transition as if nothing had ever been forgotten.
+    Set<Message> noLapseKnowledge = new LinkedHashSet<>(ctx.getDerivationKnowledge());
+    noLapseKnowledge.addAll(payload);
+    noLapseKnowledge.addAll(premises);
+    if (receivedMessage != null) noLapseKnowledge.add(receivedMessage);
+    noLapseKnowledge.addAll(fresh);
+
+    ctx.addAllKnowledge(premises);
+    Set<Message> unavailable = new LinkedHashSet<>();
+    if (!ctx.hasLapsed()) {
+      ctx.addAllKnowledge(payload);
+    } else {
+      for (Message value : payload) {
+        if (ctx.getKnowledge().contains(value) || isPublicAtom(value)
+            || forgetDerivationChecker.derivableUnderForgetting(value, ctx)) {
+          ctx.addKnowledge(value);
+        } else {
+          unavailable.add(value); // never added (case 1) or obtainable only with a forgotten rule
+        }
+      }
+    }
+
     List<Message> forgottenMessages = new ArrayList<>();
     for (String forgotten : forgetSet) {
       Message m = resolveForgetMessage(ctx.getKnowledge(), receivedMessage, forgotten);
@@ -230,7 +308,7 @@ public class ForgetMutationStrategy implements MutationStrategy {
       if (!m.equals(receivedMessage) && !ctx.getKnowledge().contains(m)) {
         log.warn("Forget({}) in rule {}: the message is not in the agent's knowledge K^i; "
                  + "it is recorded in the Forget set but cannot affect current derivations",
-                 forgotten, rule.getRule_name());
+                 forgotten, current.getRule_name());
       }
     }
     boolean forgetsReceived = receivedMessage != null && forgottenMessages.contains(receivedMessage);
@@ -240,232 +318,256 @@ public class ForgetMutationStrategy implements MutationStrategy {
     }
     ctx.addAllKnowledge(fresh);
     for (InferenceRule r : rulesForgottenNow) ctx.forgetRule(r);
-    Set<InferenceRule> rulesAfter = new TreeSet<>(ctx.getForgottenRules());
-    parametersBundle.setForgetContext(ctx);
+    if (annotated) ctx.markLapsed();
+    ForgetContext noLapse = new ForgetContext(noLapseKnowledge, Collections.emptySet(),
+        Collections.emptySet(), ctx.getBlockingMode(), ctx.getTypeMap());
 
     log.info("Algorithm 1 - rule {}: forgotten messages {}, forgotten rules {}",
-             rule.getRule_name(), forgetSet, rulesForgottenNow);
+             current.getRule_name(), forgetSet, rulesForgottenNow);
     log.info("Knowledge K: {}", ctx.getKnowledge().stream().map(Message::represent).toList());
     log.info("Forget set: {}", ctx.getForgetSet().stream().map(Message::represent).toList());
     log.info("Forgotten rules: {}", ctx.getForgottenRules());
     log.info("Blocking mode: {}", ctx.getBlockingMode());
 
-    // ===== NEGLECT: lines 12-14 (messages) and 44-46 (rules) =====
+    // ===== Phase 2: NEGLECT (lines 21-24) =====
     Set<String> nonInternal = new HashSet<>(currentNonInternalActions());
     nonInternal.addAll(lemmaWitnessActions(parametersBundle));
     Set<String> actionsToNeglect = new LinkedHashSet<>();
-    if (rule.isHuman()) {
+    if (current.isHuman()) {
       for (Message forgottenMessage : forgottenMessages) {
-        for (Fact action : isMessageUsedInInternalAction(rule, forgottenMessage, nonInternal)) {
+        for (Fact action : isMessageUsedInInternalAction(current, forgottenMessage, nonInternal)) {
           log.info("Forget triggers Neglect on rule {}: internal action {} uses forgotten message {}",
-                   rule.getRule_name(), action.getF_name(), forgottenMessage.represent());
+                   current.getRule_name(), action.getF_name(), forgottenMessage.represent());
           actionsToNeglect.add(factSignature(action));
         }
       }
-      for (Fact action : actionsMadeImpossible(rule, withoutLapse, ctx, nonInternal)) {
+      for (Fact action : actionsMadeImpossible(current, noLapse, ctx, nonInternal)) {
         log.info("Forget triggers Neglect on rule {}: internal action {} needs forgotten information",
-                 rule.getRule_name(), action.getF_name());
+                 current.getRule_name(), action.getF_name());
         actionsToNeglect.add(factSignature(action));
       }
     }
 
     // Extract target message (m2 - the send message)
-    Message target = derivationCheckService.extractTargetFromRule(rule);
-    if (target == null) {
-      // No outgoing m2: only Neglect applies (lines 12-14 / 44-46).
-      log.info(
-          "No outgoing m2 in rule {} — Neglect path: removing {} internal action(s) and Forget annotation",
-          rule.getRule_name(), actionsToNeglect.size());
-      printAnalysisHeader(rule, ctx, forgottenMessages, rulesForgottenNow, null);
-      System.out.println("Decision: no send in this transition; NEGLECT of "
-          + actionsToNeglect.size() + " internal action(s)");
-      ArrayList<Rule> theoryClone = deepCloneTheory(rules);
-      Rule startRule = findRuleByName(theoryClone, rule.getRule_name());
-      if (startRule != null) {
-        for (String forgotten : forgetSet) {
-          removeForgetMutation(startRule, canonicalize(forgotten));
-        }
-        if (!actionsToNeglect.isEmpty()) {
-          removeNeglectedActions(startRule, actionsToNeglect);
-          startRule.setRule_name(startRule.getRule_name() + "_M");
-          startRule.setTypo(Type.MUTATED);
-        }
-      }
-      parametersBundle.getCollections().add(theoryClone);
-      return parametersBundle;
+    Message target = derivationCheckService.extractTargetFromRule(current);
+    if (target != null) {
+      ctx.addPublicKnowledge(publicAtoms(target));
+      noLapse.addPublicKnowledge(publicAtoms(target));
+    }
+    boolean preserved = target == null || forgetDerivationChecker.derivableUnderForgetting(target, ctx);
+    if (!annotated && preserved && actionsToNeglect.isEmpty()) {
+      return List.of(run); // the earlier lapses do not affect this transition
     }
 
-    ctx.addPublicKnowledge(publicAtoms(target));
+    printAnalysisHeader(current, ctx, forgottenMessages, rulesForgottenNow, target, runIndex, unavailable);
+    if (target == null) {
+      // No outgoing m2: only Neglect applies.
+      System.out.println("Decision: no send in this transition; NEGLECT of "
+          + actionsToNeglect.size() + " internal action(s)");
+      return List.of(new ForgetRun(withNeglect(run.theory(), current, actionsToNeglect), ctx));
+    }
     log.info("Target message m2: {}", target.represent());
 
     // Report (captured into the zip's _DerivationTree.txt): the derivations Π of m2 from the
     // knowledge actually used by the analysis, and per derivation its blocked hypotheses and
     // forgotten rules.
-    printAnalysisHeader(rule, ctx, forgottenMessages, rulesForgottenNow, target);
     NormalDerivationEnumerator.Result enumeration =
         forgetDerivationChecker.enumerate(target, ctx.getDerivationKnowledge());
     forgetDerivationChecker.printDerivationTree(target, ctx.getDerivationKnowledge());
     printDerivationSummary(enumeration, ctx);
 
-    // ===== Decision =====
-    boolean preserved = forgetDerivationChecker.derivableUnderForgetting(target, ctx);
+    // ===== Phase 2: send m2 (lines 25-27) =====
     if (preserved) {
       System.out.println("Decision: send preserved (some derivation of m2 has no blocked hypothesis "
           + "and uses no forgotten rule)");
-      ArrayList<Rule> theoryClone = deepCloneTheory(rules);
-      Rule startRule = findRuleByName(theoryClone, rule.getRule_name());
-      if (startRule != null) {
-        for (String forgotten : forgetSet) {
-          removeForgetMutation(startRule, canonicalize(forgotten));
-        }
-        if (!actionsToNeglect.isEmpty()) {
-          removeNeglectedActions(startRule, actionsToNeglect);
-          startRule.setRule_name(startRule.getRule_name() + "_M");
-          startRule.setTypo(Type.MUTATED);
-        }
-      }
-      parametersBundle.getCollections().add(theoryClone);
-      return parametersBundle;
+      return List.of(new ForgetRun(withNeglect(run.theory(), current, actionsToNeglect), ctx));
     }
 
-    // Π = ∅: m2 is not derivable from K^{i+1} even before any forgetting, i.e. the extracted
-    // knowledge cannot reproduce the original send and Algorithm 1's precondition fails.
-    boolean derivableAtAll = forgetDerivationChecker.derivable(
-        target, new ForgetContext(ctx.getDerivationKnowledge(), Collections.emptySet(),
-            ctx.getBlockingMode(), ctx.getTypeMap()), Collections.emptySet());
+    // Π = ∅ even without any lapse: the extracted knowledge cannot reproduce the original send,
+    // so Algorithm 1's precondition fails (this is not an effect of forgetting).
+    boolean derivableAtAll = forgetDerivationChecker.derivable(target, noLapse, Collections.emptySet());
     if (!derivableAtAll) {
       log.warn("Algorithm 1 precondition violated in rule {}: m2 = {} is not derivable from K at all",
-               rule.getRule_name(), target.represent());
+               current.getRule_name(), target.represent());
       System.out.println("WARNING: m2 is not derivable from K even without forgetting (Π = ∅); "
           + "the knowledge extracted from the specification is incomplete for this transition.");
-      if (!forgottenMessages.isEmpty() && rulesAfter.isEmpty()) {
-        return applyTextualFallback(rule, rules, parametersBundle, ctx, forgottenMessages, forgetSet,
-                                    target, actionsToNeglect);
+      if (!annotated) {
+        System.out.println("Decision: send unchanged (not an effect of the earlier lapses)");
+        return List.of(new ForgetRun(withNeglect(run.theory(), current, actionsToNeglect), ctx));
+      }
+      if (!forgottenMessages.isEmpty() && ctx.getForgottenRules().isEmpty()) {
+        return List.of(new ForgetRun(applyTextualFallback(current, run.theory(), ctx,
+            forgottenMessages, target, actionsToNeglect), ctx));
       }
     }
 
-    // ===== REPLACE (lines 19-35): only for forgotten messages, over derivations that use no
-    // forgotten rule =====
-    List<VariantInfo> variants = new ArrayList<>();
-    if (!forgottenMessages.isEmpty() && derivableAtAll) {
-      variants = computeVariants(target, ctx, enumeration, parametersBundle, rule);
-    }
+    // ===== Phase 2: REPLACE (lines 28-40) =====
+    List<VariantInfo> variants = derivableAtAll
+        ? computeComponentVariants(target, ctx, parametersBundle, current)
+        : new ArrayList<>();
 
     if (variants.isEmpty()) {
-      // ===== SKIP (lines 36-38, 51) =====
-      System.out.println("Decision: SKIP the send (no surviving derivation"
-          + (forgottenMessages.isEmpty() ? "; a forgotten rule triggers no REPLACE)" : " and no admissible replacement)"));
+      // ===== SKIP (lines 41-43) =====
+      System.out.println("Decision: SKIP the send (no surviving derivation and no admissible "
+          + "replacement of the underivable components yields a derivable variant)");
       log.info("No usable derivation and no variant - removing send and matching receive");
-      ArrayList<Rule> theoryClone = deepCloneTheory(rules);
-      Rule startRule = findRuleByName(theoryClone, rule.getRule_name());
-      if (startRule != null) {
-        removeSendAndMatchingReceive(theoryClone, startRule, target);
-        for (String forgotten : forgetSet) {
-          removeForgetMutation(startRule, canonicalize(forgotten));
-        }
-        removeNeglectedActions(startRule, actionsToNeglect);
-        startRule.setRule_name(startRule.getRule_name() + "_M");
-        startRule.setTypo(Type.MUTATED);
-      }
-      parametersBundle.getCollections().add(theoryClone);
-      return parametersBundle;
+      ArrayList<Rule> theoryClone = deepCloneTheory(run.theory());
+      Rule startRule = findRuleByName(theoryClone, current.getRule_name());
+      removeSendAndMatchingReceive(theoryClone, startRule, target);
+      removeNeglectedActions(startRule, actionsToNeglect);
+      markMutated(startRule, "_M");
+      return List.of(new ForgetRun(theoryClone, ctx));
     }
 
-    // Generate one mutant per variant
+    // Generate one run per variant
     System.out.println("Decision: REPLACE with " + variants.size() + " variant(s): "
         + variants.stream().map(v -> TamarinTermPrinter.print(v.variant)).toList());
     Set<String> witnesses = lemmaWitnessActions(parametersBundle);
+    List<ForgetRun> out = new ArrayList<>();
     for (int i = 0; i < variants.size(); i++) {
       VariantInfo variantInfo = variants.get(i);
-      ArrayList<Rule> theoryClone = deepCloneTheory(rules);
-      Rule startRule = findRuleByName(theoryClone, rule.getRule_name());
-
-      if (startRule == null) {
-        log.error("Could not find rule {} in theory clone", rule.getRule_name());
-        continue;
-      }
-
+      ArrayList<Rule> theoryClone = deepCloneTheory(run.theory());
+      Rule startRule = findRuleByName(theoryClone, current.getRule_name());
       applyVariantToRule(startRule, target, variantInfo.variant, variantInfo.replacement, witnesses);
-
-      String suffix = variants.size() > 1 ? "_M" + i : "_M";
-      startRule.setRule_name(startRule.getRule_name() + suffix);
-      startRule.setTypo(Type.MUTATED);
-
-      for (String forgotten : forgetSet) {
-        removeForgetMutation(startRule, canonicalize(forgotten));
-      }
-
+      markMutated(startRule, variants.size() > 1 ? "_M" + i : "_M");
       removeNeglectedActions(startRule, actionsToNeglect);
-
       // Propagate changes to subsequent rules
       propagateMutationWithVariant(theoryClone, startRule, variantInfo.replacement);
-
-      parametersBundle.getCollections().add(theoryClone);
+      out.add(new ForgetRun(theoryClone, i == 0 ? ctx : ctx.copy()));
     }
+    return out;
+  }
 
-    return parametersBundle;
+  private Set<String> forgottenMessagesAt(String ruleName, ParametersBundle parametersBundle) {
+    Set<String> s = parametersBundle.getForgetMutationSet().get(ruleName);
+    return s == null ? Collections.emptySet() : s;
+  }
+
+  private Set<InferenceRule> forgottenRulesAt(String ruleName, ParametersBundle parametersBundle) {
+    Set<InferenceRule> s = parametersBundle.getForgetRuleSet().get(ruleName);
+    return s == null ? Collections.emptySet() : s;
   }
 
   /**
-   * REPLACE variants (Algorithm 1, lines 19-35). For every normal derivation π of m2 that uses no
-   * forgotten rule, each blocked hypothesis m̄ gets its replacement set R_m̄ (line 22); every
-   * combination C yields the variant obtained by replaying π with the hypotheses replaced
-   * (line 28). Identical variants are merged; a variant whose replay is invalid (e.g. a decryption
-   * with a replaced key) or equals m2 is dropped.
+   * The agent of the first annotated human transition (the human whose lapses are modelled), or
+   * null if it cannot be determined.
    */
-  private List<VariantInfo> computeVariants(Message target, ForgetContext ctx,
-                                            NormalDerivationEnumerator.Result enumeration,
-                                            ParametersBundle parametersBundle, Rule rule) {
-    if (enumeration.truncated()) {
-      System.out.println("WARNING: the derivation enumeration was truncated by the depth/count limits; "
-          + "REPLACE variants of the omitted derivations are not generated.");
+  private String lapsingAgent(ArrayList<Rule> rules, ParametersBundle parametersBundle) {
+    for (Rule r : rules) {
+      if (!r.isHuman()) continue;
+      if (!forgottenMessagesAt(r.getRule_name(), parametersBundle).isEmpty()
+          || !forgottenRulesAt(r.getRule_name(), parametersBundle).isEmpty()) {
+        return agentOf(r);
+      }
+    }
+    return null;
+  }
+
+  /** The agent executing {@code rule}: the first argument of its State fact (premise first). */
+  private String agentOf(Rule rule) {
+    if (rule == null) return null;
+    for (List<Fact> facts : List.of(rule.getPreconditions(), rule.getPostconditions())) {
+      if (facts == null) continue;
+      for (Fact f : facts) {
+        if (isStateFact(f.getF_name()) && f.getParameters() != null && !f.getParameters().isEmpty()) {
+          return canonicalize(paramToString(f.getParameters().get(0)).trim());
+        }
+      }
+    }
+    return null;
+  }
+
+  /** The rule of transition {@code name} in a run: same name, or the name with a mutation suffix. */
+  private Rule findCurrentRule(ArrayList<Rule> theory, String name) {
+    String mutated = java.util.regex.Pattern.quote(name) + "_M\\d*";
+    for (Rule r : theory) {
+      if (r.getRule_name().equals(name) || r.getRule_name().matches(mutated)) return r;
+    }
+    return null;
+  }
+
+  /** Marks a rule as mutated; a rule that already carries a mutation suffix keeps its name. */
+  private void markMutated(Rule rule, String suffix) {
+    if (!rule.getRule_name().matches(".*_M\\d*")) {
+      rule.setRule_name(rule.getRule_name() + suffix);
+    }
+    rule.setTypo(Type.MUTATED);
+  }
+
+  /** The run's theory with the neglected internal actions of {@code current} removed. */
+  private ArrayList<Rule> withNeglect(ArrayList<Rule> theory, Rule current, Set<String> actionsToNeglect) {
+    if (actionsToNeglect.isEmpty()) return theory;
+    ArrayList<Rule> theoryClone = deepCloneTheory(theory);
+    Rule startRule = findRuleByName(theoryClone, current.getRule_name());
+    removeNeglectedActions(startRule, actionsToNeglect);
+    markMutated(startRule, "_M");
+    return theoryClone;
+  }
+
+  private static boolean isPublicAtom(Message m) {
+    return m instanceof Atom a && (a.getValue().startsWith("$") || a.getValue().startsWith("'"));
+  }
+
+  /**
+   * REPLACE variants of Algorithm 1 (November 2026 version), lines 29-40.
+   *
+   * <p>U is the set of atomic submessages of m2 (Definition 2, {@link
+   * ReplacementComputer#atomicSubmessages}) that H cannot derive under forgetting — whether they
+   * were never added to K, are forgotten, or can only be obtained with a forgotten rule. Each
+   * m̄ ∈ U gets Repl(m̄) (line 31); every combination C yields m2[C] (line 35), which triggers
+   * REPLACE only if H can derive it under forgetting (line 36). If U is empty the only combination
+   * is m2 itself, which is not derivable here, so no variant exists (e.g. a forgotten rule needed
+   * to build m2, or an underivable value inside a key).
+   */
+  private List<VariantInfo> computeComponentVariants(Message target, ForgetContext ctx,
+                                                     ParametersBundle parametersBundle, Rule rule) {
+    List<Message> underivable = new ArrayList<>();
+    for (Message component : ReplacementComputer.atomicSubmessages(target)) {
+      if (!forgetDerivationChecker.derivableUnderForgetting(component, ctx)) {
+        underivable.add(component);
+      }
+    }
+    System.out.println("Underivable atomic components U: "
+        + underivable.stream().map(TamarinTermPrinter::print).toList());
+    List<List<Message>> replacementSets = new ArrayList<>();
+    for (Message component : underivable) {
+      Set<Message> replacements = replacementComputer.computeReplacementSet(component, ctx);
+      System.out.println("Repl(" + TamarinTermPrinter.print(component) + "): "
+          + replacements.stream().map(TamarinTermPrinter::print).toList());
+      if (replacements.isEmpty()) {
+        return new ArrayList<>(); // the product of line 34 is empty
+      }
+      replacementSets.add(new ArrayList<>(replacements));
     }
     Map<Message, VariantInfo> variants = new LinkedHashMap<>();
-    outer:
-    for (Derivation derivation : enumeration.derivations()) {
-      if (!blockingChecker.forgottenRulesUsed(derivation, ctx).isEmpty()) {
-        continue; // Definition 5: unusable whatever the hypotheses; replacement cannot repair it
+    int[] idx = new int[underivable.size()];
+    while (true) {
+      Map<Message, Message> chosen = new LinkedHashMap<>();
+      for (int k = 0; k < idx.length; k++) {
+        chosen.put(underivable.get(k), replacementSets.get(k).get(idx[k]));
       }
-      Set<Message> blockedHypotheses = blockingChecker.findBlockedHypotheses(derivation, ctx);
-      if (blockedHypotheses.isEmpty()) {
-        continue;
-      }
-      List<Message> blockedList = new ArrayList<>(blockedHypotheses);
-      List<List<Message>> replacementSets = new ArrayList<>();
-      for (Message blocked : blockedList) {
-        Set<Message> replacements = replacementComputer.computeReplacementSet(blocked, ctx);
-        if (replacements.isEmpty()) {
-          log.debug("Empty replacement set for blocked hypothesis {} - skipping this derivation",
-                    blocked.represent());
-          continue outer; // lines 23-24
-        }
-        replacementSets.add(new ArrayList<>(replacements));
-      }
-      int[] idx = new int[blockedList.size()];
-      while (true) {
-        Map<Message, Message> chosen = new LinkedHashMap<>();
-        for (int k = 0; k < idx.length; k++) {
-          chosen.put(blockedList.get(k), replacementSets.get(k).get(idx[k]));
-        }
-        Optional<Message> variant = DerivationRules.replay(derivation, chosen);
-        if (variant.isEmpty()) {
-          log.debug("Replacement {} invalidates a rule application of the derivation - dropped", chosen);
-        } else if (!variant.get().equals(target) && !variants.containsKey(variant.get())) {
+      Message variant = ReplacementComputer.substituteSubmessages(target, chosen);
+      if (!variant.equals(target) && !variants.containsKey(variant)) {
+        ctx.addPublicKnowledge(publicAtoms(variant));
+        if (forgetDerivationChecker.derivableUnderForgetting(variant, ctx)) {
           if (variants.size() >= maxVariantsPerRule) {
             parametersBundle.setVariantsTruncated(true);
             log.warn("Reached maximum variants per rule ({}) for rule {} - truncating",
                      maxVariantsPerRule, rule.getRule_name());
-            break outer;
+            break;
           }
-          variants.put(variant.get(), new VariantInfo(variant.get(), chosen));
+          variants.put(variant, new VariantInfo(variant, chosen));
+        } else {
+          System.out.println("Variant " + TamarinTermPrinter.print(variant)
+              + " is not derivable under forgetting - dropped (line 36)");
         }
-        int k = idx.length - 1;
-        while (k >= 0 && ++idx[k] == replacementSets.get(k).size()) {
-          idx[k] = 0;
-          k--;
-        }
-        if (k < 0) break;
       }
+      int k = idx.length - 1;
+      while (k >= 0 && ++idx[k] == replacementSets.get(k).size()) {
+        idx[k] = 0;
+        k--;
+      }
+      if (k < 0) break;
     }
     return new ArrayList<>(variants.values());
   }
@@ -476,10 +578,9 @@ public class ForgetMutationStrategy implements MutationStrategy {
    * substituted textually by a type-compatible replacement, or the send is skipped when there is
    * none. This is not part of Algorithm 1 and is reported as such.
    */
-  private ParametersBundle applyTextualFallback(Rule rule, ArrayList<Rule> rules,
-                                                ParametersBundle parametersBundle, ForgetContext ctx,
-                                                List<Message> forgottenMessages, Set<String> forgetSet,
-                                                Message target, Set<String> actionsToNeglect) {
+  private ArrayList<Rule> applyTextualFallback(Rule rule, ArrayList<Rule> rules, ForgetContext ctx,
+                                              List<Message> forgottenMessages,
+                                              Message target, Set<String> actionsToNeglect) {
     Map<String, String> textualSub = new LinkedHashMap<>();
     for (Message forgottenMessage : forgottenMessages) {
       Set<Message> reps = replacementComputer.computeReplacementSet(forgottenMessage, ctx);
@@ -510,14 +611,9 @@ public class ForgetMutationStrategy implements MutationStrategy {
         removeSendAndMatchingReceive(theoryClone, startRule, target);
         removeNeglectedActions(startRule, actionsToNeglect);
       }
-      for (String forgotten : forgetSet) {
-        removeForgetMutation(startRule, canonicalize(forgotten));
-      }
-      startRule.setRule_name(startRule.getRule_name() + "_M");
-      startRule.setTypo(Type.MUTATED);
+      markMutated(startRule, "_M");
     }
-    parametersBundle.getCollections().add(theoryClone);
-    return parametersBundle;
+    return theoryClone;
   }
 
   /**
@@ -574,10 +670,18 @@ public class ForgetMutationStrategy implements MutationStrategy {
   }
 
   private void printAnalysisHeader(Rule rule, ForgetContext ctx, List<Message> forgottenMessages,
-                                   Set<InferenceRule> forgottenRules, Message target) {
+                                   Set<InferenceRule> forgottenRules, Message target, int runIndex,
+                                   Set<Message> unavailable) {
     System.out.println();
     System.out.println("==================== Forget analysis: rule " + rule.getRule_name()
-        + " ====================");
+        + (runIndex >= 0 ? " (run " + runIndex + ")" : "") + " ====================");
+    if (forgottenMessages.isEmpty() && forgottenRules.isEmpty()) {
+      System.out.println("No lapse in this transition; effect of the lapses at earlier transitions");
+    }
+    if (!unavailable.isEmpty()) {
+      System.out.println("Not available to H after the earlier lapses: "
+          + unavailable.stream().map(TamarinTermPrinter::print).toList());
+    }
     System.out.println("Lapse: forgotten messages " + forgottenMessages.stream()
         .map(TamarinTermPrinter::print).toList() + ", forgotten rules " + forgottenRules);
     System.out.println("Blocking case: " + ctx.getBlockingMode());
@@ -1337,6 +1441,22 @@ public class ForgetMutationStrategy implements MutationStrategy {
    * K^{i+1} = K^i ∪ {m1} ∪ fresh values).
    */
   private Set<Message> knowledgeAtState(Rule rule) {
+    Set<Message> out = statePayloadKnowledge(rule);
+    out.addAll(premiseKnowledge(rule));
+    return out;
+  }
+
+  /** The agent's name and the payload of the State fact the rule starts from. */
+  private Set<Message> statePayloadKnowledge(Rule rule) {
+    return knowledgeFromPremises(rule, true);
+  }
+
+  /** Values read from the other premises (persistent facts such as !Ltk, !Pk). */
+  private Set<Message> premiseKnowledge(Rule rule) {
+    return knowledgeFromPremises(rule, false);
+  }
+
+  private Set<Message> knowledgeFromPremises(Rule rule, boolean stateFacts) {
     Set<Message> out = new LinkedHashSet<>();
     if (rule == null || rule.getPreconditions() == null) return out;
     for (Fact pre : rule.getPreconditions()) {
@@ -1344,6 +1464,7 @@ public class ForgetMutationStrategy implements MutationStrategy {
       List<Object> params = pre.getParameters();
       if (params == null || params.isEmpty()) continue;
       if (isStateFact(name)) {
+        if (!stateFacts) continue;
         addIfKnowledge(out, paramToMessage(params.get(0)));
         if (params.size() >= 3) {
           String payload = payloadToString(params.get(params.size() - 1)).trim();
@@ -1354,7 +1475,7 @@ public class ForgetMutationStrategy implements MutationStrategy {
             if (!part.isBlank()) addIfKnowledge(out, parseStringToMessage(part));
           }
         }
-      } else if (!isInboundFact(name) && !isFreshFact(name)) {
+      } else if (!stateFacts && !isInboundFact(name) && !isFreshFact(name)) {
         for (Object p : params) addIfKnowledge(out, paramToMessage(p));
       }
     }

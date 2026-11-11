@@ -121,7 +121,7 @@ class ProceduralForgettingE2ETest {
   }
 
   @Test
-  @DisplayName("Forget(pw1) + ForgetRule(r_k): REPLACE cannot repair a forgotten rule -> SKIP")
+  @DisplayName("Forget(pw1) + ForgetRule(r_k): the key needs the forgotten rule, so no variant is derivable -> SKIP")
   void combinedLapseSkips() throws Exception {
     ForgetEndpointHarness.Outcome o = postBank("Forget(pw1)\n\t  , ForgetRule('r_k')");
     assertThat(o.status()).isEqualTo(200);
@@ -150,18 +150,18 @@ class ProceduralForgettingE2ETest {
 
   @Test
   @DisplayName("r_sdec forgotten in User_1: send skipped, CheckSecret neglected, matching receive removed; "
-      + "R̄ persists so User_2 (which must decrypt) is skipped too")
+      + "R̄ persists so User_2 (which must decrypt) is skipped too, in the same mutated specification")
   void proceduralDefault() throws Exception {
     ForgetEndpointHarness.Outcome o = harness.post(FORGET, "Procedural.spthy", procedural);
     assertThat(o.status()).isEqualTo(200);
-    assertThat(o.mutants()).hasSize(2);
-    String m0 = o.mutants().get("Procedural_M0.m");
-    String m1 = o.mutants().get("Procedural_M1.m");
+    // Both lapses belong to one execution (Algorithm 1 is applied at every transition after the
+    // first lapse), so their effects accumulate in a single mutant.
+    String m0 = o.onlyMutant();
     String u1 = ruleText(m0, "User_1_M");
     assertThat(u1).doesNotContain("Out(h(x))").doesNotContain("CheckSecret(").contains("Receive($User,'c1'");
     assertThat(ruleText(m0, "Server_2_M")).doesNotContain("In(h(x))");
     // User_2: ForgetRule('r_pair') alone would not matter, but r_sdec (forgotten in User_1) does.
-    assertThat(ruleText(m1, "User_2_M")).doesNotContain("Out(h(z))");
+    assertThat(ruleText(m0, "User_2_M")).doesNotContain("Out(h(z))");
     assertThat(o.report()).contains("R̄^{i+1} (forgotten rules): [r_pair, r_sdec]");
   }
 

@@ -72,6 +72,7 @@ rule S_1:
 --[ Send($S,'n1',accOld)
 , To($Human)
 , Nominate($S,$Human,accOld)
+, S_Nominate($S,accOld)
 ]->
 [ State($S,'2',<$Human,accOld,accNew,svc,amt>)
 , SndS($S,$Human,<'account'>,<accOld>)
@@ -83,6 +84,7 @@ rule S_2:
 --[ Send($S,'n2',accNew)
 , To($Human)
 , Nominate($S,$Human,accNew)
+, S_Nominate($S,accNew)
 , LostAccess($S,accOld)
 ]->
 [ State($S,'3',<$Human,accOld,accNew,svc,amt>)
@@ -111,13 +113,12 @@ rule H_1:
 [ State($Human,'2',<$S,$B,ltkH,accOld>)
 ]
 
-rule H_2:
+rule H_2_M:
 [ State($Human,'2',<$S,$B,ltkH,accOld>)
 , RcvS($S,$Human,<'accountchange'>,<accNew>)
 ]
 --[ H()
 , Receive($Human,'n2',accNew)
-, RecordAccount($Human,$S,accNew)
 ]->
 [ State($Human,'3',<$S,$B,ltkH,accOld,accNew>)
 ]
@@ -148,6 +149,7 @@ rule H_4_M:
 , CheckApproval(order,<$Human,$B,$S,svc,amt,accOld>)
 , WarningShown($Human,$B)
 , Confirmed($Human,$B,$S,svc,amt,accOld)
+, H_Confirm($Human,$B,$S,svc,amt,accOld)
 , Send($Human,'c1',aenc(<<'Confirm',$Human,$B,order>,sign(<'Confirm',$Human,$B,order>,ltkH)>,pkB))
 , To($B)
 ]->
@@ -157,7 +159,7 @@ rule H_4_M:
 
 rule H_5:
 [ State($Human,'5',<$S,$B,ltkH,accOld,accNew,svc,amt>)
-, RcvS($B,$Human,<'result'>,<'PaymentExecuted'>)
+, RcvS($B,$Human,<'status'>,<'PaymentExecuted'>)
 ]
 --[ H()
 , Hfin($Human,'PaymentExecuted')
@@ -186,9 +188,10 @@ rule Bank_2:
 --[ Receive($B,'c1',<'Confirm',$Human,$B,<$Human,$B,s,svc,amt,acc>>)
 , Eq(verify(sigC,<'Confirm',$Human,$B,<$Human,$B,s,svc,amt,acc>>,pkH),true)
 , CheckConf($B,$Human,s,svc,amt,acc)
-, Transfer($B,$Human,s,svc,amt,acc)
+, TransferDetail($B,$Human,s,svc,amt,acc)
+, Transfer(amt,acc)
 ]->
-[ SndS($B,$Human,<'result'>,<'PaymentExecuted'>)
+[ SndS($B,$Human,<'status'>,<'PaymentExecuted'>)
 ]
 
 
@@ -221,13 +224,32 @@ restriction notSameRole:
 
 /****LEMMAS****/
 
+/* [SG3] -- paper Listing 3.  Should HOLD, also in the mutated ceremony. */
+lemma Transfer_as_confirmed: all-traces
+"All amt acc #i.
+    Transfer(amt, acc) @ #i
+    ==> (Ex h b s srv #j.
+         H_Confirm(h, b, s, srv, amt, acc) @ #j
+         & #j < #i)"
+
+/* [SG4] -- paper Listing 4.  Violated by the Forget mutation. */
+lemma Transfer_to_latest_account: all-traces
+"All amt acc #i.
+    Transfer(amt, acc) @ #i
+    ==> (Ex s #j.
+         S_Nominate(s, acc) @ #j
+         & #j < #i
+         & not (Ex acc2 #k.
+                S_Nominate(s, acc2) @ #k
+                & #j < #k & #k < #i))"
+
 /* SECURITY GOAL — violated by the forget mutation.
    After a payment reminder, the money is paid into the account that S
    most recently nominated before that reminder.
    Tamarin should find a counterexample in the mutated ceremony. */
 lemma Payment_To_Latest_Nominated_Account: all-traces
 	"All b h s svc amt acc #t.
-	   Transfer(b,h,s,svc,amt,acc) @ #t
+	   TransferDetail(b,h,s,svc,amt,acc) @ #t
 	   ==> Ex #n #r. Nominate(s,h,acc) @ #n
 	       & Reminder(s,h,svc,amt) @ #r
 	       & #n < #r & #r < #t
@@ -237,7 +259,7 @@ lemma Payment_To_Latest_Nominated_Account: all-traces
    The money is never paid into an account S can no longer use. */
 lemma Payment_Not_Into_Lost_Account: all-traces
 	"All b h s svc amt acc #t #l.
-	   Transfer(b,h,s,svc,amt,acc) @ #t & LostAccess(s,acc) @ #l & #l < #t
+	   TransferDetail(b,h,s,svc,amt,acc) @ #t & LostAccess(s,acc) @ #l & #l < #t
 	   ==> F"
 
 /* BANK BEHAVES AS SPECIFIED — should HOLD, also in the mutated ceremony.
@@ -245,7 +267,7 @@ lemma Payment_Not_Into_Lost_Account: all-traces
    explicitly confirmed after seeing the warning. */
 lemma Transfer_Requires_Confirmation: all-traces
 	"All b h s svc amt acc #t.
-	   Transfer(b,h,s,svc,amt,acc) @ #t
+	   TransferDetail(b,h,s,svc,amt,acc) @ #t
 	   ==> Ex #o #c. PaymentOrder(h,b,s,svc,amt,acc) @ #o
 	       & WarningShown(h,b) @ #c
 	       & Confirmed(h,b,s,svc,amt,acc) @ #c
@@ -259,14 +281,14 @@ lemma Lapse_Pays_Old_Account: exists-trace
 	   Nominate(s,h,accOld) @ #n1
 	 & Nominate(s,h,accNew) @ #n2
 	 & Reminder(s,h,svc,amt) @ #r
-	 & Transfer(b,h,s,svc,amt,accOld) @ #t
+	 & TransferDetail(b,h,s,svc,amt,accOld) @ #t
 	 & #n1 < #n2 & #n2 < #r & #r < #t
 	 & not accOld = accNew"
 
 /* FUNCTIONAL — a confirmed payment is executed and reported to H. */
 lemma Functional: exists-trace
 	"Ex b h s svc amt acc #t #i.
-	   Transfer(b,h,s,svc,amt,acc) @ #t
+	   TransferDetail(b,h,s,svc,amt,acc) @ #t
 	 & PaymentSuccess(h,b) @ #i
 	 & #t < #i"
 

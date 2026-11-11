@@ -560,7 +560,7 @@ entries:
       - "It can remove specific knowledge from an agent state."
       - "If the forgotten value is not derivable, it can be replaced by another value of the same type extracted from setup knowledge."
       - "The loss is propagated through later agent rules."
-      - "Forgotten knowledge can be reintroduced if it is received again later."
+      - "Forgotten knowledge stays forgotten for the rest of the execution, even if it is received again (Algorithm 1)."
       - "The implementation cooperates with `SetupKnowledgeExtractor`, `DerivationCheckService`, `UtilityFunctions`, and `ReplaceMutationService`."
     why: |
       Forget is for memory loss, not skipped communication. The trace may still contain receives and sends, but derivability and usable knowledge change.
@@ -583,11 +583,11 @@ entries:
       - "Update postcondition knowledge by removing the forgotten value from usable state."
       - "If the value is not derivable, fetch a same-type alternative from `SetupKnowledgeExtractor` and substitute it."
       - "Propagate the substitution to all subsequent agent rules."
-      - "If the original value is received again, remove it from the forget tracking set and allow its use."
+      - "If the original value is received again, it is added to the knowledge but stays in the forget set (Algorithm 1, line 18)."
     details:
       - "The Oyster example forgets `bal($oyster)` in `H_2` and replaces it with `bal($ccard)` of the same `balance` type."
-      - "If `bal($oyster)` is received again in `H_3`, it is re-added."
-      - "Propagation keeps the absence of the forgotten value active until explicit reacquisition."
+      - "If `bal($oyster)` is received again in `H_3`, it stays forgotten."
+      - "Propagation keeps the absence of the forgotten value active for the rest of the execution."
     why: |
       This algorithm preserves ceremony validity while modeling a participant who no longer has usable access to a specific value.
     related: [manual.forget.overview, manual.derivation.process]

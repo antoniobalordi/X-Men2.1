@@ -146,7 +146,7 @@ Prover](https://tamarin-prover.github.io/) (or any tool that consumes
 > "what if the human messed up like *this*?" versions automatically, so you
 > can catch attacks that only show up when a human makes a mistake.
 
-A complete [invoice payment example](examples/invoice-payment/README.md) includes the original ceremony, its generated Forget variant, derivation report, Tamarin proofs, and counterexample traces.
+Two complete invoice payment examples include the original ceremony, its generated Forget variant, derivation report, Tamarin proofs, and counterexample traces: [the human does not retain the new account](examples/invoice-payment/README.md) (case (1)) and [the human forgets how to decrypt](examples/invoice-payment-procedural/README.md) (procedural forgetting).
 
 ### The mutation menu — what each checkbox actually does
 
@@ -291,27 +291,43 @@ select **Forget Mutation**, leave the external Haskell option off, and click
 **Start Mutation**. The first human transition forgets symmetric decryption
 (`ForgetRule('r_sdec')`): X-Men removes the `CheckSecret(x)` check (**NEGLECT**)
 and the `h(x)` send (**SKIP**). The forgotten skill also blocks the later
-`h(z)` send. Download the two `.m` variants and the derivation report to inspect
+`h(z)` send. Both lapses belong to one execution, so their effects are in the
+same mutated `.m` file; download it with the derivation report to inspect
 these decisions. To compare with a skill that is still available, remove the
 `ForgetRule('r_sdec')` line in a copy of the input: forgetting only `r_pair`
 in the second transition leaves its send intact.
 
-**What happens (Algorithm 1, lines 40–53).**
+A forgotten rule can also lead to a **REPLACE**: in the
+[procedural invoice payment example](examples/invoice-payment-procedural/README.md)
+the human forgets symmetric decryption when the account-change notice
+arrives, cannot read the new account, and orders the payment into the account
+they still remember (`accOld` replaces `accNew` at the next transition).
+
+**What happens (Algorithm 1: Phase 1 and Phase 2).**
 
 1. The human still stores the received message; the rule is added to the set of
-   forgotten rules.
-2. Every internal action (a check constrained by a restriction, e.g. `Eq(..)`)
+   forgotten rules, where it stays for the rest of the execution.
+2. From the first lapse on, Algorithm 1 is applied to **every** later human
+   transition, annotated or not, so an earlier lapse also affects later sends
+   and checks. A value written in the agent's `State` counts as known only if
+   the human can still obtain it (it was not lost by a lapse).
+3. Every internal action (a check constrained by a restriction, e.g. `Eq(..)`)
    whose arguments can no longer be derived is removed (**NEGLECT**).
-3. If some derivation of the outgoing message uses no forgotten rule and no
-   forgotten message, the send is **preserved**. Otherwise the send and its
-   matching receive are removed (**SKIP**). A forgotten rule never triggers a
-   **REPLACE**: substituting values cannot give back a skill.
+4. If some derivation of the outgoing message uses no forgotten rule and no
+   forgotten message, the send is **preserved**.
+5. Otherwise X-Men collects the atomic components of the outgoing message that
+   the human can no longer derive — forgotten, never stored, or obtainable only
+   with a forgotten rule — and replaces each by a value of the human's
+   knowledge with the same format and label. Every combination whose result the
+   human can derive gives a **REPLACE** variant.
+6. If there is none — e.g. the forgotten rule is needed to build the message
+   itself, or the underivable value sits inside a key — the send and its
+   matching receive are removed (**SKIP**).
 
 **How it differs from atomic forgetting.** Atomic forgetting blocks derivations
-that use a forgotten message *as a hypothesis* and may lead to REPLACE (the
-human sends a similar value they still remember). Procedural forgetting blocks
-derivations that *apply* a forgotten rule, keeps all hypotheses available, and
-leads only to NEGLECT, preservation or SKIP.
+that use a forgotten message *as a hypothesis*; procedural forgetting blocks
+derivations that *apply* a forgotten rule and keeps all hypotheses available.
+Both lead to the same decisions: NEGLECT, preservation, REPLACE or SKIP.
 
 **Reading the result.** Next to the mutated models, the zip contains
 `<file>_DerivationTree.txt`. For each annotated transition it lists the lapse,
@@ -326,9 +342,10 @@ are treated as witnesses, not as internal checks. The knowledge of a transition
 is its pre-`State` payload, the values read from other premises (e.g. `!Ltk`,
 `!Pk`), the agent's own name, the received message and fresh values; values that
 the modeller wrote into the post-`State` are not used as hypotheses because the
-agent only obtains them by inference. See
-[`IMPLEMENTATION_REPORT.md`](IMPLEMENTATION_REPORT.md) for the full mapping to
-the paper and the derivation audit.
+agent only obtains them by inference. After a lapse, a value of the pre-`State`
+payload is used only if the human can still obtain it. Tamarin's `sign(m, sk)` is
+read as the paper's signature (encryption under the private key), so `m` is a
+component of the signed message.
 
 #### What the "Show derivation tree on screen" checkbox does
 

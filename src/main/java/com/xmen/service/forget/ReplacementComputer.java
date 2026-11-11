@@ -2,21 +2,106 @@ package com.xmen.service.forget;
 
 import com.xmen.model.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 /**
- * ReplacementComputer implements Algorithm 1's replacement logic:
- * - For each blocked hypothesis, compute replacement candidates from updated knowledge K'
- * - Candidates must satisfy format constraints and label/type constraints
- * - Generate all combinations (cartesian product) of replacements for variants
+ * ReplacementComputer implements the replacement step of Algorithm 1 (journal version of
+ * November 2026, lines 29-40):
+ * - U: the atomic submessages of m2 that H cannot derive under forgetting, whatever the cause
+ *   (never added to K, forgotten, or obtainable only with a forgotten rule) — see
+ *   {@link #atomicSubmessages(Message)}
+ * - Repl(m̄) (line 31): messages of K that are not blocked, with the same format and label as m̄
+ * - each combination of replacements yields the variant m2[C] ({@link #substituteSubmessages});
+ *   the caller keeps it only if it is derivable under forgetting (line 36)
  */
 @Slf4j
 @Component
 public class ReplacementComputer {
 
     private static final int MAX_VARIANTS = 100; // Cap to prevent explosion
+
+    /** Closure-aware blocking test of line 31; optional so that unit tests can use {@code new}. */
+    @Autowired(required = false)
+    private BlockingChecker blockingChecker;
+
+    // ===== Spec rules of the November 2026 algorithm, kept in one place =====
+
+    /**
+     * The atomic submessages of {@code m} (Definition 2): submessages are reached through pairs and
+     * through the plaintext (not the key) of symmetric and asymmetric encryption; a message is atomic
+     * if it has no proper submessage. Tamarin's {@code sign(m, sk)} is read as the paper's signature
+     * {m}_{K^-1}, an asymmetric encryption under the private key (Sec. "Algebra of messages"), so its
+     * first argument is a submessage. Any other function application (hash, pk, user functions) is
+     * atomic.
+     */
+    public static Set<Message> atomicSubmessages(Message m) {
+        Set<Message> out = new LinkedHashSet<>();
+        collectAtomicSubmessages(m, out);
+        return out;
+    }
+
+    private static void collectAtomicSubmessages(Message m, Set<Message> out) {
+        if (m == null) return;
+        if (m instanceof Pair p) {
+            collectAtomicSubmessages(p.getLeft(), out);
+            collectAtomicSubmessages(p.getRight(), out);
+            return;
+        }
+        Message body = submessageBody(m);
+        if (body != null) {
+            collectAtomicSubmessages(body, out);
+            return;
+        }
+        out.add(m);
+    }
+
+    /** The argument of {@code m} whose submessages are submessages of {@code m}, if any. */
+    private static Message submessageBody(Message m) {
+        if (m instanceof Encrypt e) return e.getMsg();
+        if (m instanceof PredictiveFunction f && f.getArgs().size() == 2) {
+            String name = f.getName().toLowerCase(Locale.ROOT);
+            if (name.equals("senc") || name.equals("aenc") || name.equals("sign")) {
+                return f.getArgs().get(0);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@code m[C]} of line 35: replaces every occurrence of a key of {@code substitution} at a
+     * submessage position of {@code m} (pairs, encrypted or signed plaintexts). Keys and the
+     * arguments of other functions are left unchanged.
+     */
+    public static Message substituteSubmessages(Message m, Map<Message, Message> substitution) {
+        if (m == null) return null;
+        if (substitution.containsKey(m)) return substitution.get(m);
+        if (m instanceof Pair p) {
+            Message l = substituteSubmessages(p.getLeft(), substitution);
+            Message r = substituteSubmessages(p.getRight(), substitution);
+            return (l == p.getLeft() && r == p.getRight()) ? m : new Pair(l, r);
+        }
+        if (m instanceof Encrypt e) {
+            Message body = substituteSubmessages(e.getMsg(), substitution);
+            return body == e.getMsg() ? m : new Encrypt(body, e.getKey());
+        }
+        if (m instanceof PredictiveFunction f && submessageBody(f) != null) {
+            Message body = substituteSubmessages(f.getArgs().get(0), substitution);
+            if (body == f.getArgs().get(0)) return m;
+            List<Message> args = new ArrayList<>(f.getArgs());
+            args.set(0, body);
+            return new PredictiveFunction(f.getName(), args);
+        }
+        return m;
+    }
+
+    /** Line 31: Blocked({m̄'}, Forget) = ∅, under the configured closure case. */
+    private boolean isBlocked(Message candidate, ForgetContext ctx) {
+        if (blockingChecker != null) return blockingChecker.isBlocked(candidate, ctx);
+        return ctx.getForgetSet().contains(candidate); // closure case (i)
+    }
 
     /**
      * Computes the replacement set R_m̄ for a blocked hypothesis.
@@ -50,9 +135,9 @@ public class ReplacementComputer {
                 continue;
             }
 
-            // Algorithm 1, line 22: m̄' ∉ Forget^{i+1} (set membership, as written in the paper;
-            // under Cases 2/3 a candidate derivable from Forget is still admitted here)
-            if (ctx.getForgetSet().contains(candidate)) {
+            // Algorithm 1, line 31: Blocked({m̄'}, Forget^{i+1}) = ∅ (under Cases 2/3 a candidate
+            // derivable from Forget is blocked too)
+            if (isBlocked(candidate, ctx)) {
                 log.debug("  Candidate {} is forgotten, skipping", candidate.represent());
                 continue;
             }
