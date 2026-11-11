@@ -1,33 +1,50 @@
-# Invoice payment ceremony — fresh Forget/Tamarin run
+# Invoice-Payment ceremony — Forget, case (1)
 
-Run date: 2026-10-27 (Europe/London). X-Men 2.0 source in this workspace compiled successfully with Java 21.0.12.1. Tamarin 1.12.0 and Maude 3.5.1 were used.
+Run date: 2026-11-11. X-Men 2.1 built from this repository (Java 21.0.12.1), Java derivation engine with default limits, blocking mode `CASE1_WEAK`, external Haskell engine off. Tamarin 1.12.0 and Maude 3.5.1.
 
-Input: [Forget_Invoice_Input.spthy](Forget_Invoice_Input.spthy). The input and generated variant are preserved unchanged from the verification run. The fresh X-Men `/api/forget/mutations` request returned HTTP 200 and one variant. Java derivation was used, with default limits and blocking mode `CASE1_WEAK`; the external Haskell engine was disabled. The verification run used isolated settings and output directories.
+Input: [Forget_Invoice_Input.spthy](Forget_Invoice_Input.spthy). Supplier S nominates account `accOld`, sends an account-change notice for `accNew` (after which S can no longer use `accOld`), then a payment reminder; H pays through bank B with signed and encrypted messages. The lapse is annotated where it happens: `Forget(accNew)` in `H_2`, the receipt of the notice. H reads the notice but does not retain `accNew` (case (1) of Definition 4). The variant with procedural forgetting is in [../invoice-payment-procedural](../invoice-payment-procedural/README.md).
+
+## What X-Men does
+
+From the [derivation report](Forget_Invoice_Input_DerivationTree.txt):
+
+- **H_2 (notice):** `accNew` does not enter H's knowledge. The internal action `RecordAccount($Human,$S,accNew)` is removed (NEGLECT).
+- **H_3 (reminder and order, no annotation):** the lapse persists. The order H is expected to send contains `accNew`, which H cannot derive. `accOld` has the same format and label (`'account'`), so Forget triggers a REPLACE (`Repl(accNew) = {accOld}`, one variant).
+- The replacement is propagated to B's receipt of the order, the approval request and the confirmation. In `H_4_M`, `CheckApproval`, `Confirmed` and `H_Confirm` all name `accOld`. No later step is neglected.
+
+## Tamarin results
 
 | Lemma | Original | Forget variant |
 | --- | --- | --- |
-| Payment_To_Latest_Nominated_Account | verified | falsified - found trace |
-| Payment_Not_Into_Lost_Account | verified | falsified - found trace |
-| Transfer_Requires_Confirmation | verified | verified |
-| Lapse_Pays_Old_Account | falsified - no trace found | verified |
-| Functional | verified | verified |
+| `Transfer_as_confirmed` (paper Listing 3, SG3) | verified (8 steps) | verified (8 steps) |
+| `Transfer_to_latest_account` (paper Listing 4, SG4) | verified (25 steps) | falsified - found trace (11 steps) |
+| `Payment_To_Latest_Nominated_Account` | verified | falsified - found trace |
+| `Payment_Not_Into_Lost_Account` | verified | falsified - found trace |
+| `Transfer_Requires_Confirmation` | verified | verified |
+| `Lapse_Pays_Old_Account` (exists-trace) | falsified - no trace found | verified |
+| `Functional` (exists-trace) | verified | verified |
 
-Both Tamarin commands exited successfully with `--prove --quit-on-warning`; all wellformedness checks passed and all five lemmas reached a conclusive result. No proof-depth bound was supplied. Proof times were 4.20s for the original and 5.13s for the variant. The security-property counterexamples are findings about the ceremony, not execution errors.
+Both runs used `--prove --quit-on-warning`, passed all wellformedness checks and reached a conclusive result for every lemma, with no proof-depth bound. Processing times were 5.16 s (original) and 5.87 s (variant). The `Lapse_Pays_Old_Account` witness is the scenario of the paper's Fig. 5: S nominates `accOld` and then `accNew`, sends the reminder, and B executes the transfer into `accOld`. The `Functional` witness shows that a payment can complete and reach H; it does not show completion on every execution.
 
-X-Men's derivation report identifies `Forget(accNew)` in H_3, blocks the derivation needing that value, and replaces it with the remembered account `accOld`. The generated order and H_4's approval/confirmation name accOld. The supplier has already nominated accNew and lost access to accOld, but the human confirms the stale order and the bank executes it. The bank-confirmation property still holds. The Functional witness establishes that payment can complete and success can reach the human; it does not establish completion on every execution.
+## Modelling notes
 
-The input retains `RecordAccount(accNew)` in H_2: this run models forgetting at payment time in H_3. Some input comments describe failure to record the notice, which is not the literal behavior tested. Results assume the model's secure channels, uncompromised keys, and single ceremony/session.
+- The paper's lemmas are used verbatim (ASCII quotes). Their action facts are in the model: `S_Nominate(s, acc)` in `S_1` and `S_2`, `H_Confirm(h, b, s, srv, amt, acc)` in `H_4`, and `Transfer(amt, acc)` in `Bank_2`. The repository's additional lemmas use the 6-ary `TransferDetail(b, h, s, svc, amt, acc)`.
+- The final message is labelled `'status'`, as in the paper's role scripts.
+- The account-change notice (`S_2`) is part of every run.
+- Results assume secure channels between the agents, uncompromised keys, and a single ceremony (`OnlyOnce`).
 
-Artifacts:
+## Files
 
-- [Fresh mutation ZIP](Forget_Invoice_Input_mutations.zip)
-- [Generated theory](Forget_Invoice_Input_M0.m)
-- [Derivation report](Forget_Invoice_Input_DerivationTree.txt)
+- [Mutation ZIP returned by X-Men](Forget_Invoice_Input_mutations.zip), containing the [generated theory](Forget_Invoice_Input_M0.m) and the [derivation report](Forget_Invoice_Input_DerivationTree.txt)
 - [Original proof](original-proved.spthy) and [prover log](original-tamarin.txt)
 - [Mutant proof](mutated-proved.spthy) and [prover log](mutated-tamarin.txt)
 - [Counterexample and witness traces (JSON)](mutated-traces.json)
 
-Reproduce from the repository root with X-Men running on its default port (8081). Upload [the input](Forget_Invoice_Input.spthy), select **Forget Mutation**, leave the external Haskell option off, then download the generated bundle. The API equivalent is:
+`PaperArtefactsGoldenTest` checks that X-Men regenerates `Forget_Invoice_Input_M0.m` byte for byte from the input.
+
+## Reproduce
+
+Start X-Men on its default port (8081), upload [the input](Forget_Invoice_Input.spthy), select **Forget Mutation**, leave the external Haskell option off, and download the bundle. The API equivalent is:
 
 ```sh
 mkdir -p target/invoice-payment
@@ -38,19 +55,16 @@ curl --fail http://127.0.0.1:8081/api/forget/mutations \
 unzip -o target/invoice-payment/Forget_Invoice_Input_mutations.zip -d target/invoice-payment
 ```
 
-Verify the included original and generated variant with Tamarin and Maude installed:
+X-Men must use its shipped vocabulary, which lists `SndS`/`RcvS` as channel facts. A vocabulary saved in the X-Men settings (`~/.xmen/settings.json`) that lists only `Out`/`In` hides this model's sends, and the mutant is then left unchanged. The report in this folder was generated with `--logging.level.com.xmen=WARN`. At the default INFO level, the same report is interleaved with log lines.
+
+Verify with Tamarin and Maude installed:
 
 ```sh
-mkdir -p target/invoice-payment
 tamarin-prover examples/invoice-payment/Forget_Invoice_Input.spthy --prove --quit-on-warning --output=target/invoice-payment/original-proved.spthy
 tamarin-prover examples/invoice-payment/Forget_Invoice_Input_M0.m --prove --quit-on-warning --output=target/invoice-payment/mutated-proved.spthy --output-json=target/invoice-payment/mutated-traces.json
 ```
 
-To verify a newly generated variant instead, use `target/invoice-payment/Forget_Invoice_Input_M0.m` as the second command's input.
-
 SHA-256:
 
-- `Forget_Invoice_Input.spthy`: `ba05c6c71b1d72f4f5a0171a69bcc2c6e4724cece480290037237e1d5169c19f`
-- `Forget_Invoice_Input_M0.m`: `3f80915cc22e9485c24bff27d31f05de320862a9209cf336929f10f73848e9fe`
-
-No application source or original input was changed. The desktop UI, external Haskell engine, and full Java test suite were not exercised.
+- `Forget_Invoice_Input.spthy`: `4d1f1315051bb8b30746276ca20997f0efa64800cd29e7bd4b8b2ab8f62d000f`
+- `Forget_Invoice_Input_M0.m`: `1fc76e6ea70db901ae3d6d5051a899e6d72968127a52a67cc02a6efb20f94491`

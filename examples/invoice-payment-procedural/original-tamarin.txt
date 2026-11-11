@@ -1,0 +1,29 @@
+maude tool: 'maude'
+ checking version: 3.5.1. OK.
+ checking installation: OK.
+[Theory InvoiceProcedural] Theory loaded
+[Theory InvoiceProcedural] Theory translated
+[Theory InvoiceProcedural] Derivation checks started
+[Open Chains] Too many chain constraints, stopping precomputation. Open Chains limits (can be changed with -c=): 10
+[Theory InvoiceProcedural] Derivation checks ended
+[Theory InvoiceProcedural] Theory closed
+[Saturating Sources] Step 1 (Max 5)
+[Saturating Sources] Done
+
+==============================================================================
+summary of summaries:
+
+analyzed: examples/invoice-payment-procedural/Forget_Invoice_Procedural.spthy
+
+  output:          examples/invoice-payment-procedural/original-proved.spthy
+  processing time: 5.34s
+  
+  Transfer_as_confirmed (all-traces): verified (8 steps)
+  Transfer_to_latest_account (all-traces): verified (19 steps)
+  Payment_To_Latest_Nominated_Account (all-traces): verified (19 steps)
+  Payment_Not_Into_Lost_Account (all-traces): verified (27 steps)
+  Transfer_Requires_Confirmation (all-traces): verified (8 steps)
+  Lapse_Pays_Old_Account (exists-trace): falsified - no trace found (55 steps)
+  Functional (exists-trace): verified (11 steps)
+
+==============================================================================

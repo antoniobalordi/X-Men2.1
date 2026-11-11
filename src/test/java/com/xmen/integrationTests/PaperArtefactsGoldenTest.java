@@ -55,19 +55,31 @@ class PaperArtefactsGoldenTest {
     try (Stream<Path> s = Files.list(workspace.root())) {
       for (Path p : s.toList()) {
         String n = p.getFileName().toString();
-        if (n.matches("(Bank|Forget_Invoice_Input)_M\\d+\\.m")) Files.deleteIfExists(p);
+        if (n.matches("(Bank|Forget_Invoice_Input|Forget_Invoice_Procedural)_M\\d+\\.m")) Files.deleteIfExists(p);
       }
     }
   }
 
   @Test
-  @DisplayName("Invoice-Payment: Forget(accNew) regenerates examples/invoice-payment/Forget_Invoice_Input_M0.m")
+  @DisplayName("Invoice-Payment, case (1): Forget(accNew) at the notice regenerates examples/invoice-payment/Forget_Invoice_Input_M0.m")
   void invoiceMutantIsUnchanged() throws Exception {
     String input = Files.readString(Paths.get("examples/invoice-payment/Forget_Invoice_Input.spthy"));
     String expected = Files.readString(Paths.get("examples/invoice-payment/Forget_Invoice_Input_M0.m"));
     ForgetEndpointHarness.Outcome o = harness.post(FORGET, "Forget_Invoice_Input.spthy", input);
     assertThat(o.status()).isEqualTo(200);
     assertThat(o.mutants()).containsOnlyKeys("Forget_Invoice_Input_M0.m");
+    assertThat(o.onlyMutant()).isEqualTo(expected);
+  }
+
+  @Test
+  @DisplayName("Invoice-Payment, case (3): ForgetRule('r_sdec') at the notice regenerates the procedural example's mutant")
+  void invoiceProceduralMutantIsUnchanged() throws Exception {
+    String dir = "examples/invoice-payment-procedural/";
+    String input = Files.readString(Paths.get(dir + "Forget_Invoice_Procedural.spthy"));
+    String expected = Files.readString(Paths.get(dir + "Forget_Invoice_Procedural_M0.m"));
+    ForgetEndpointHarness.Outcome o = harness.post(FORGET, "Forget_Invoice_Procedural.spthy", input);
+    assertThat(o.status()).isEqualTo(200);
+    assertThat(o.mutants()).containsOnlyKeys("Forget_Invoice_Procedural_M0.m");
     assertThat(o.onlyMutant()).isEqualTo(expected);
   }
 

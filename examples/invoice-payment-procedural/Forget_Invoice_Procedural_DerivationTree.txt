@@ -1,0 +1,1484 @@
+
+==================== Forget analysis: rule H_2 ====================
+Lapse: forgotten messages [], forgotten rules [r_sdec]
+Blocking case: CASE1_WEAK
+K^{i+1}: [$Human, $S, $B, ltkH, kSH, senc(<'Setup',svc,amt,accOld>,kSH), svc, amt, accOld, senc(<'AccountChange',accNew>,kSH)]
+Forget^{i+1}: []
+R̄^{i+1} (forgotten rules): [r_sdec]
+Decision: no send in this transition; NEGLECT of 1 internal action(s)
+
+==================== Forget analysis: rule H_3 ====================
+No lapse in this transition; effect of the lapses at earlier transitions
+Not available to H after the earlier lapses: [accNew]
+Lapse: forgotten messages [], forgotten rules []
+Blocking case: CASE1_WEAK
+K^{i+1}: [$Human, $S, $B, ltkH, kSH, senc(<'Setup',svc,amt,accOld>,kSH), svc, amt, accOld, senc(<'AccountChange',accNew>,kSH), pkB, senc(<'Reminder',svc,amt>,kSH)]
+Forget^{i+1}: []
+R̄^{i+1} (forgotten rules): [r_sdec]
+m2: aenc(<<$Human,$B,$S,svc,amt,accNew>,sign(<$Human,$B,$S,svc,amt,accNew>,ltkH)>,pkB)
+2026-11-11T12:11:04.556+01:00  WARN 78204 --- [X-Men] [io-18081-exec-8] c.x.s.forget.ForgetDerivationChecker     : Derivation enumeration for aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB) hit the depth/count limits; the set of derivations may be incomplete (the derivability decision itself is exact)
+
+Derivation report
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Knowledge size: 12
+Derivations found: 18
+Legend: (K) = taken from knowledge set
+
+
+DerivationTree #1
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - svc (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - kSH (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #2
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt, accOld>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Setup', svc, amt, accOld>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - svc (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - kSH (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #3
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Reminder', svc, amt>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - svc (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - kSH (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #4
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - svc (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #5
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt, accOld>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Setup', svc, amt, accOld>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - svc (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #6
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Reminder', svc, amt>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - svc (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #7
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt, accOld>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Setup', svc, amt, accOld>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - kSH (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - svc (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #8
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt, accOld>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Setup', svc, amt, accOld>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt, accOld>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Setup', svc, amt, accOld>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - kSH (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #9
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt, accOld>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Setup', svc, amt, accOld>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Reminder', svc, amt>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - kSH (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #10
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt, accOld>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Setup', svc, amt, accOld>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - kSH (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - svc (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #11
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt, accOld>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Setup', svc, amt, accOld>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt, accOld>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Setup', svc, amt, accOld>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - kSH (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #12
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt, accOld>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Setup', svc, amt, accOld>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Reminder', svc, amt>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - kSH (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #13
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Reminder', svc, amt>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - svc (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #14
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Reminder', svc, amt>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt, accOld>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Setup', svc, amt, accOld>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #15
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Reminder', svc, amt>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Reminder', svc, amt>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - amt (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #16
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Reminder', svc, amt>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - svc (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #17
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Reminder', svc, amt>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt, accOld>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Setup', svc, amt, accOld>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - senc(('Setup', (svc, (amt, accOld))), kSH) (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+DerivationTree #18
+Legend: (K) = taken from knowledge set
+Target: aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+Tree:
+\- aenc((($Human, ($B, ($S, (svc, (amt, accNew))))), sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)), pkB)
+   -> apply a function to its arguments [r_aenc]
+   |- <$Human, $B, $S, svc, amt, accNew, sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)>
+      -> combine parts into a pair/tuple [r_pair]
+   |  |- <$Human, $B, $S, svc, amt, accNew>
+   |     -> combine parts into a pair/tuple [r_pair]
+   |  |  |- $Human (K)
+   |  |  \- <$B, $S, svc, amt, accNew>
+   |  |     -> combine parts into a pair/tuple [r_pair]
+   |  |     |- $B (K)
+   |  |     \- <$S, svc, amt, accNew>
+   |  |        -> combine parts into a pair/tuple [r_pair]
+   |  |        |- $S (K)
+   |  |        \- <svc, amt, accNew>
+   |  |           -> combine parts into a pair/tuple [r_pair]
+   |  |           |- svc
+   |  |              -> from a pair, take the first component [r_unpair]
+   |  |           |  \- <svc, amt>
+   |  |           |     -> from a pair, take the second component [r_unpair]
+   |  |           |     \- <'Reminder', svc, amt>
+   |  |           |        -> decrypt a protected message using a key [r_sdec]
+   |  |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |           |        \- kSH (K)
+   |  |           \- <amt, accNew>
+   |  |              -> combine parts into a pair/tuple [r_pair]
+   |  |              |- amt
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |              |  \- <svc, amt>
+   |  |              |     -> from a pair, take the second component [r_unpair]
+   |  |              |     \- <'Reminder', svc, amt>
+   |  |              |        -> decrypt a protected message using a key [r_sdec]
+   |  |              |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |  |              |        \- kSH (K)
+   |  |              \- accNew
+   |  |                 -> from a pair, take the second component [r_unpair]
+   |  |                 \- <'AccountChange', accNew>
+   |  |                    -> decrypt a protected message using a key [r_sdec]
+   |  |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |  |                    \- kSH (K)
+   |  \- sign(($Human, ($B, ($S, (svc, (amt, accNew))))), ltkH)
+   |     -> apply a function to its arguments [r_sign]
+   |     |- <$Human, $B, $S, svc, amt, accNew>
+   |        -> combine parts into a pair/tuple [r_pair]
+   |     |  |- $Human (K)
+   |     |  \- <$B, $S, svc, amt, accNew>
+   |     |     -> combine parts into a pair/tuple [r_pair]
+   |     |     |- $B (K)
+   |     |     \- <$S, svc, amt, accNew>
+   |     |        -> combine parts into a pair/tuple [r_pair]
+   |     |        |- $S (K)
+   |     |        \- <svc, amt, accNew>
+   |     |           -> combine parts into a pair/tuple [r_pair]
+   |     |           |- svc
+   |     |              -> from a pair, take the first component [r_unpair]
+   |     |           |  \- <svc, amt>
+   |     |           |     -> from a pair, take the second component [r_unpair]
+   |     |           |     \- <'Reminder', svc, amt>
+   |     |           |        -> decrypt a protected message using a key [r_sdec]
+   |     |           |        |- senc(('Reminder', (svc, amt)), kSH) (K)
+   |     |           |        \- kSH (K)
+   |     |           \- <amt, accNew>
+   |     |              -> combine parts into a pair/tuple [r_pair]
+   |     |              |- amt (K)
+   |     |              \- accNew
+   |     |                 -> from a pair, take the second component [r_unpair]
+   |     |                 \- <'AccountChange', accNew>
+   |     |                    -> decrypt a protected message using a key [r_sdec]
+   |     |                    |- senc(('AccountChange', accNew), kSH) (K)
+   |     |                    \- kSH (K)
+   |     \- ltkH (K)
+   \- pkB (K)
+
+Knowledge used (leaves):
+   - $Human (K)
+   - $B (K)
+   - $S (K)
+   - senc(('Reminder', (svc, amt)), kSH) (K)
+   - kSH (K)
+   - senc(('AccountChange', accNew), kSH) (K)
+   - amt (K)
+   - ltkH (K)
+   - pkB (K)
+
+Per-derivation analysis (18 normal derivation(s), TRUNCATED by limits):
+  #1 Hyp=[$Human, $B, $S, svc, amt, senc(<'AccountChange',accNew>,kSH), kSH, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #2 Hyp=[$Human, $B, $S, svc, amt, senc(<'AccountChange',accNew>,kSH), kSH, senc(<'Setup',svc,amt,accOld>,kSH), ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #3 Hyp=[$Human, $B, $S, svc, amt, senc(<'AccountChange',accNew>,kSH), kSH, senc(<'Reminder',svc,amt>,kSH), ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #4 Hyp=[$Human, $B, $S, svc, senc(<'Reminder',svc,amt>,kSH), kSH, senc(<'AccountChange',accNew>,kSH), amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #5 Hyp=[$Human, $B, $S, svc, senc(<'Reminder',svc,amt>,kSH), kSH, senc(<'AccountChange',accNew>,kSH), senc(<'Setup',svc,amt,accOld>,kSH), amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #6 Hyp=[$Human, $B, $S, svc, senc(<'Reminder',svc,amt>,kSH), kSH, senc(<'AccountChange',accNew>,kSH), amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #7 Hyp=[$Human, $B, $S, senc(<'Setup',svc,amt,accOld>,kSH), kSH, amt, senc(<'AccountChange',accNew>,kSH), svc, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #8 Hyp=[$Human, $B, $S, senc(<'Setup',svc,amt,accOld>,kSH), kSH, amt, senc(<'AccountChange',accNew>,kSH), ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #9 Hyp=[$Human, $B, $S, senc(<'Setup',svc,amt,accOld>,kSH), kSH, amt, senc(<'AccountChange',accNew>,kSH), senc(<'Reminder',svc,amt>,kSH), ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #10 Hyp=[$Human, $B, $S, senc(<'Setup',svc,amt,accOld>,kSH), kSH, senc(<'Reminder',svc,amt>,kSH), senc(<'AccountChange',accNew>,kSH), svc, amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #11 Hyp=[$Human, $B, $S, senc(<'Setup',svc,amt,accOld>,kSH), kSH, senc(<'Reminder',svc,amt>,kSH), senc(<'AccountChange',accNew>,kSH), amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #12 Hyp=[$Human, $B, $S, senc(<'Setup',svc,amt,accOld>,kSH), kSH, senc(<'Reminder',svc,amt>,kSH), senc(<'AccountChange',accNew>,kSH), amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #13 Hyp=[$Human, $B, $S, senc(<'Reminder',svc,amt>,kSH), kSH, amt, senc(<'AccountChange',accNew>,kSH), svc, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #14 Hyp=[$Human, $B, $S, senc(<'Reminder',svc,amt>,kSH), kSH, amt, senc(<'AccountChange',accNew>,kSH), senc(<'Setup',svc,amt,accOld>,kSH), ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #15 Hyp=[$Human, $B, $S, senc(<'Reminder',svc,amt>,kSH), kSH, amt, senc(<'AccountChange',accNew>,kSH), ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #16 Hyp=[$Human, $B, $S, senc(<'Reminder',svc,amt>,kSH), kSH, senc(<'AccountChange',accNew>,kSH), svc, amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #17 Hyp=[$Human, $B, $S, senc(<'Reminder',svc,amt>,kSH), kSH, senc(<'AccountChange',accNew>,kSH), senc(<'Setup',svc,amt,accOld>,kSH), amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+  #18 Hyp=[$Human, $B, $S, senc(<'Reminder',svc,amt>,kSH), kSH, senc(<'AccountChange',accNew>,kSH), amt, ltkH, pkB] Rules=[r_aenc, r_pair, r_sdec, r_sign, r_unpair] blocked=[] forgottenRulesUsed=[r_sdec]
+Underivable atomic components U: [accNew]
+Repl(accNew): [accOld]
+Decision: REPLACE with 1 variant(s): [aenc(<<$Human,$B,$S,svc,amt,accOld>,sign(<$Human,$B,$S,svc,amt,accOld>,ltkH)>,pkB)]

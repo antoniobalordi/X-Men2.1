@@ -66,15 +66,12 @@ class ForgetLapsePersistenceE2ETest {
     }
   }
 
-  /** The committed Invoice input with Forget(accNew) moved from the payment step to the notice. */
+  /** The committed Invoice input: Forget(accNew) at the notice (H_2), case (1) of Definition 4. */
   private static String invoiceCase1() throws IOException {
     String input = Files.readString(Paths.get("examples/invoice-payment/Forget_Invoice_Input.spthy"));
-    String noForget = input.replace("\t  , Forget(accNew)\n", "");
-    assertThat(noForget).isNotEqualTo(input);
-    String atNotice = noForget.replace(
-        "\t  , Receive($Human,'n2',accNew)\n", "\t  , Receive($Human,'n2',accNew)\n\t  , Forget(accNew)\n");
-    assertThat(atNotice).isNotEqualTo(noForget);
-    return atNotice;
+    assertThat(ruleText(input, "H_2")).contains("Forget(accNew)");
+    assertThat(ruleText(input, "H_3")).doesNotContain("Forget(");
+    return input;
   }
 
   private static void dump(String name, ForgetEndpointHarness.Outcome o) throws IOException {
@@ -102,6 +99,8 @@ class ForgetLapsePersistenceE2ETest {
         .contains("PaymentOrder($Human,$B,$S,svc,amt,accOld)")
         .contains("sign(<$Human,$B,$S,svc,amt,accOld>,ltkH)")
         .doesNotContain("PaymentOrder($Human,$B,$S,svc,amt,accNew)");
+    // The replacement reaches the confirmation (paper Listing 3 reads H_Confirm).
+    assertThat(ruleText(m, "H_4_M")).contains("H_Confirm($Human,$B,$S,svc,amt,accOld)");
     assertThat(o.report())
         .contains("Not available to H after the earlier lapses: [accNew]")
         .contains("Underivable atomic components U: [accNew]")
@@ -126,7 +125,7 @@ class ForgetLapsePersistenceE2ETest {
   @Test
   @DisplayName("Case (3) at the notice: ForgetRule(r_sdec) leaves accNew underivable, so the order is REPLACEd")
   void proceduralSdecReplacesAtPayment() throws Exception {
-    String spec = Files.readString(Paths.get("src/test/resources/Forget_Invoice_Procedural.spthy"));
+    String spec = Files.readString(Paths.get("examples/invoice-payment-procedural/Forget_Invoice_Procedural.spthy"));
     ForgetEndpointHarness.Outcome o = harness.post(FORGET, "InvoiceProcedural.spthy", spec);
     dump("procedural", o);
     assertThat(o.status()).isEqualTo(200);
@@ -135,6 +134,7 @@ class ForgetLapsePersistenceE2ETest {
     assertThat(ruleText(m, "H_3_M"))
         .contains("PaymentOrder($Human,$B,$S,svc,amt,accOld)")
         .contains("sign(<$Human,$B,$S,svc,amt,accOld>,ltkH)");
+    assertThat(ruleText(m, "H_4_M")).contains("H_Confirm($Human,$B,$S,svc,amt,accOld)");
     assertThat(o.report())
         .contains("R̄^{i+1} (forgotten rules): [r_sdec]")
         .contains("Underivable atomic components U: [accNew]")

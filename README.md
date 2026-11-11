@@ -146,7 +146,7 @@ Prover](https://tamarin-prover.github.io/) (or any tool that consumes
 > "what if the human messed up like *this*?" versions automatically, so you
 > can catch attacks that only show up when a human makes a mistake.
 
-A complete [invoice payment example](examples/invoice-payment/README.md) includes the original ceremony, its generated Forget variant, derivation report, Tamarin proofs, and counterexample traces.
+Two complete invoice payment examples include the original ceremony, its generated Forget variant, derivation report, Tamarin proofs, and counterexample traces: [the human does not retain the new account](examples/invoice-payment/README.md) (case (1)) and [the human forgets how to decrypt](examples/invoice-payment-procedural/README.md) (procedural forgetting).
 
 ### The mutation menu — what each checkbox actually does
 
@@ -297,8 +297,8 @@ these decisions. To compare with a skill that is still available, remove the
 `ForgetRule('r_sdec')` line in a copy of the input: forgetting only `r_pair`
 in the second transition leaves its send intact.
 
-A forgotten rule can also lead to a **REPLACE**: in
-[`src/test/resources/Forget_Invoice_Procedural.spthy`](src/test/resources/Forget_Invoice_Procedural.spthy)
+A forgotten rule can also lead to a **REPLACE**: in the
+[procedural invoice payment example](examples/invoice-payment-procedural/README.md)
 the human forgets symmetric decryption when the account-change notice
 arrives, cannot read the new account, and orders the payment into the account
 they still remember (`accOld` replaces `accNew` at the next transition).
