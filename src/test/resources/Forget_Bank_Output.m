@@ -96,7 +96,7 @@ rule H_2_M:
 
 rule H_3_Granted:
 [ State($Human,'3',<$B1,$B2,nH,nB,pw1,pw2>)
-, In('Granted')
+, In(<'status','Granted'>)
 ]
 --[ H()
 , Hfin($Human,'Granted')
@@ -107,7 +107,7 @@ rule H_3_Granted:
 
 rule H_3_Denied:
 [ State($Human,'3',<$B1,$B2,nH,nB,pw1,pw2>)
-, In('Denied')
+, In(<'status','Denied'>)
 ]
 --[ H()
 , Hfin($Human,'Denied')
@@ -138,7 +138,7 @@ rule Bank_2_OK:
 , Receive($B,'m3',<$Human,pw>)
 , Commit($B,$Human,'login')
 ]->
-[ Out('Granted')
+[ Out(<'status','Granted'>)
 ]
 
 rule Bank_2_Fail:
@@ -149,7 +149,7 @@ rule Bank_2_Fail:
 --[ LoginFail($B,$Human)
 , Neq(pw,storedPw)
 ]->
-[ Out('Denied')
+[ Out(<'status','Denied'>)
 ]
 
 

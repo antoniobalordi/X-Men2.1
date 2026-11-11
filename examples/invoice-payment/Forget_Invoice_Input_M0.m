@@ -157,7 +157,7 @@ rule H_4_M:
 
 rule H_5:
 [ State($Human,'5',<$S,$B,ltkH,accOld,accNew,svc,amt>)
-, RcvS($B,$Human,<'result'>,<'PaymentExecuted'>)
+, RcvS($B,$Human,<'status'>,<'PaymentExecuted'>)
 ]
 --[ H()
 , Hfin($Human,'PaymentExecuted')
@@ -188,7 +188,7 @@ rule Bank_2:
 , CheckConf($B,$Human,s,svc,amt,acc)
 , Transfer($B,$Human,s,svc,amt,acc)
 ]->
-[ SndS($B,$Human,<'result'>,<'PaymentExecuted'>)
+[ SndS($B,$Human,<'status'>,<'PaymentExecuted'>)
 ]
 
 
