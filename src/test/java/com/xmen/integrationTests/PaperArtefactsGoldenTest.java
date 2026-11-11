@@ -78,11 +78,6 @@ class PaperArtefactsGoldenTest {
     String expected = Files.readString(Paths.get("src/test/resources/Forget_Bank_Output.m"));
     ForgetEndpointHarness.Outcome o = harness.post(FORGET, "Bank.spthy", input);
     assertThat(o.status()).isEqualTo(200);
-    // The committed file had its trailing spaces trimmed ("[ " -> "["); content is otherwise identical.
-    assertThat(stripTrailingSpaces(o.onlyMutant())).isEqualTo(stripTrailingSpaces(expected));
-  }
-
-  private static String stripTrailingSpaces(String s) {
-    return s.replaceAll("(?m)[ \\t]+$", "");
+    assertThat(o.onlyMutant()).isEqualTo(expected);
   }
 }

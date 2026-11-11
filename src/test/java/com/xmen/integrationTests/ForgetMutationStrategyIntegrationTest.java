@@ -472,14 +472,14 @@ public class ForgetMutationStrategyIntegrationTest {
         Files.readString(
             Paths.get("src/test/resources/Forget_Bank_Input.spthy"), StandardCharsets.UTF_8);
 
-    assertThat(spec).contains("lemma Auth_B2_requires_H_intent");
-    assertThat(spec).contains("lemma Password_Confidentiality");
+    assertThat(spec).contains("lemma Human_intends_Bank2_if_Bank2_OK");
+    assertThat(spec).contains("lemma Password2_confidential");
     assertThat(spec).contains("U_LoginRequest($Human,$B1,");
     assertThat(spec).contains("PasswordAttempt($Human,$B1,");
     assertThat(spec).contains("LoginOK($B,$Human,");
     assertThat(spec).doesNotContain("lemma Challenge_Injective");
     assertThat(spec).doesNotContain("lemma Complete_Verification");
-    assertThat(spec).doesNotContain("lemma Human_intends_Bank2_if_Bank2_OK");
+    assertThat(spec).doesNotContain("lemma Auth_B2_requires_H_intent");
   }
 
   @SuppressWarnings("unused")
