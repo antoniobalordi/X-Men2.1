@@ -47,8 +47,8 @@ class ForgetContextTransitionTest {
   }
 
   @Test
-  @DisplayName("Unforget-on-receive removes m from Forget and adds to knowledge")
-  void updateForTransitionUnforgetOnReceive() {
+  @DisplayName("Re-receiving a forgotten message adds it to K but keeps it in Forget (Algorithm 1, line 18)")
+  void updateForTransitionReceiveForgottenAgain() {
     Message m2 = new Atom("m2");
     Set<Message> knowledge = new LinkedHashSet<>();
     Set<Message> forgetSet = new LinkedHashSet<>();
@@ -58,7 +58,7 @@ class ForgetContextTransitionTest {
     ctx.updateForTransition(m2, null);
 
     assertTrue(ctx.getKnowledge().contains(m2));
-    assertTrue(ctx.getForgetSet().isEmpty());
+    assertTrue(ctx.getForgetSet().contains(m2));
   }
 
   @Test

@@ -124,14 +124,15 @@ class PaperExamplesTest {
   }
 
   @Test
-  @DisplayName("Example 3: forgetting a known message, then re-receiving it")
-  void example3() {
+  @DisplayName("Forgetting a known message (Example 3); re-receiving it keeps it in Forget (Algorithm 1, line 18)")
+  void forgetKnownMessageThenReceiveAgain() {
     Message c = senc(pair(a("m2"), a("m4")), a("m5"));
     ForgetContext ctx = new ForgetContext(set(c, a("m2"), a("m4")), Set.of(), BlockingMode.CASE1_WEAK, Map.of());
     ctx.updateForTransition(a("m1"), a("m2"));
     assertThat(ctx.getKnowledge()).containsExactlyInAnyOrder(c, a("m2"), a("m4"), a("m1"));
     assertThat(ctx.getForgetSet()).containsExactly(a("m2"));
+    // Example 3 of the manuscript removes m2 from Forget here; Algorithm 1 (line 18) does not.
     ctx.updateForTransition(a("m2"), null);
-    assertThat(ctx.getForgetSet()).isEmpty();
+    assertThat(ctx.getForgetSet()).containsExactly(a("m2"));
   }
 }

@@ -29,7 +29,7 @@ entries:
     details:
       - Forget newly received information means the receive still happens, but the received message is not added to the human's knowledge.
       - Forget prior knowledge means the message remains in monotonic knowledge, but is added to a separate forget set.
-      - A forgotten message can become usable again if the human explicitly re-receives it or derives it through new non-forgotten information.
+      - A forgotten message stays in the forget set for the rest of the execution (Algorithm 1), even if the human receives it again.
       - The mutation targets human memory lapses, not deliberate adversarial behavior.
     why: |
       This distinction prevents the bot from confusing Forget with Skip-Receive. Skip removes the receive event; Forget preserves the event but changes what the human can remember or derive afterward.
@@ -49,7 +49,7 @@ entries:
       - Tamarin-style knowledge is usually monotonic, so simply deleting facts would not fit the execution model well.
       - "The paper therefore keeps the knowledge set and adds a side condition: derivations must avoid blocked forgotten hypotheses."
       - The notation `K(H,i) |-_{Forget_H^i} m` means that human H can derive message m at step i without relying on forbidden forgotten information.
-      - If a forgotten value is learned again later, it can be removed from the forget set.
+      - Algorithm 1 never removes a message from the forget set, so receiving a forgotten value again does not make it usable again.
     why: |
       The forget set is the reason Forget can model memory loss without breaking the rest of the ceremony semantics.
     related: [paper.forget.blocked-derivations, paper.forget.prior-knowledge, paper.forget.derivable]
@@ -79,7 +79,7 @@ entries:
       - The ordinary knowledge set still contains the message because knowledge is monotonic.
       - The forget set blocks derivations that depend on the forgotten message.
       - This captures memory lapses such as forgetting a password, nonce, token, identity, or key component.
-      - If the same message is explicitly received again, it can become usable again.
+      - Receiving the same message again adds a copy to the knowledge, but the message stays in the forget set (Algorithm 1, line 18).
     why: |
       This is the case that older Skip, Add, Replace, Neglect, and Disorder mutations cannot express directly.
     related: [paper.forget.forget-set, paper.bank-login.attack, paper.forget.blocked-derivations]
@@ -708,8 +708,7 @@ entries:
     details:
       - The transition may still add the newly received m1 to knowledge.
       - The forgotten prior message m2 is recorded in the forget set.
-      - If the human later receives m2 directly, m2 can be removed from the forget set.
-      - If the human receives enough new information to derive m2 without blocked hypotheses, m2 can become usable again.
+      - Under Algorithm 1, m2 stays in the forget set even if the human later receives m2 or a message from which m2 can be derived.
     why: |
       This is the second Forget case and the one that causes the Bank Login attack.
     related: [paper.forget.prior-knowledge, paper.bank-login.attack, paper.forget.example-relearn]
@@ -719,14 +718,13 @@ entries:
     category: mutation
     terms: [relearn forgotten message, receive forgotten m2 again, remove from forget set, forgotten information usable again]
     definition: |
-      Forgotten information can become usable again when the human explicitly receives it again or receives new non-forgotten material that allows deriving it.
+      Algorithm 1 does not model relearning: once a message is in the forget set it stays there for the rest of the execution, like a forgotten rule.
     details:
-      - Re-receiving the exact forgotten message removes that message from the forget set.
-      - Receiving a new supporting message can make a forgotten value derivable again.
-      - The key condition is that the new derivation must not depend on blocked hypotheses.
-      - This makes Forget reversible in a controlled way, without deleting or rewriting the original knowledge.
+      - Receiving the forgotten message again adds it to the knowledge, but it stays in the forget set (Algorithm 1, lines 9, 14 and 18).
+      - Receiving a message from which the forgotten value could be derived does not remove it from the forget set either.
+      - X-Men 2.1 follows Algorithm 1 here.
     why: |
-      This is important for long ceremonies where a user can be reminded of something they had forgotten.
+      A lapse therefore persists to the end of the ceremony execution; modelling a reminder that restores the value is not covered.
     related: [paper.forget.prior-knowledge, paper.forget.derivable, paper.forget.forget-set]
 
   - id: paper.forget.blocking-function
