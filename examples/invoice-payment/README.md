@@ -55,7 +55,7 @@ curl --fail http://127.0.0.1:8081/api/forget/mutations \
 unzip -o target/invoice-payment/Forget_Invoice_Input_mutations.zip -d target/invoice-payment
 ```
 
-X-Men must use its shipped vocabulary, which lists `SndS`/`RcvS` as channel facts. A vocabulary saved in the X-Men settings (`~/.xmen/settings.json`) that lists only `Out`/`In` hides this model's sends, and the mutant is then left unchanged. The report in this folder was generated with `--logging.level.com.xmen=WARN`. At the default INFO level, the same report is interleaved with log lines.
+X-Men must use its shipped vocabulary, which lists `SndS`/`RcvS` as channel facts. A vocabulary saved in the X-Men settings (`~/.xmen/settings.json`) that lists only `Out`/`In` hides this model's `SndS` sends. X-Men then still returns a mutant (HTTP 200), but a wrong one: the order keeps `accNew` (no REPLACE at `H_3`), and `CheckApproval` is neglected at `H_4` instead. The report in this folder was generated with `--logging.level.com.xmen=WARN`. At the default INFO level, the same report is interleaved with log lines.
 
 Verify with Tamarin and Maude installed:
 
