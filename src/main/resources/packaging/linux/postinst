@@ -40,11 +40,13 @@ LAUNCHER_AS_SERVICE_SCRIPTS
 
 case "$1" in
     configure)
-        # xdg-desktop-menu fails ("No writable system menu directory found")
-        # when /etc/xdg/menus is missing, as on servers, WSL, containers and
-        # minimal installs without a desktop. Create it so the install
-        # succeeds there too; desktop systems already have it.
-        mkdir -p /etc/xdg/menus
+        # Run as root, xdg-desktop-menu (xdg-utils 1.1.3) needs writable
+        # desktop-directories AND applications folders under /usr/local/share
+        # or /usr/share, even with no .directory file to install; otherwise
+        # it exits 3, "No writable system menu directory found", and dpkg
+        # fails. Servers, WSL, containers and minimal installs lack
+        # desktop-directories; desktop systems already have both.
+        mkdir -p /usr/share/desktop-directories /usr/share/applications
 DESKTOP_COMMANDS_INSTALL
 LAUNCHER_AS_SERVICE_COMMANDS_INSTALL
 

@@ -25,9 +25,9 @@ LAUNCHER_AS_SERVICE_SCRIPTS
 
 case "$1" in
     remove|upgrade|deconfigure)
-        # Same requirement as in postinst: xdg-desktop-menu needs
-        # /etc/xdg/menus, or the package could not be removed.
-        mkdir -p /etc/xdg/menus
+        # Same requirement as in postinst: without these folders
+        # xdg-desktop-menu fails and the package could not be removed.
+        mkdir -p /usr/share/desktop-directories /usr/share/applications
 DESKTOP_COMMANDS_UNINSTALL
 LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
 
