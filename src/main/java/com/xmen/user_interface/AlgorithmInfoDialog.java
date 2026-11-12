@@ -48,7 +48,9 @@ public final class AlgorithmInfoDialog {
                 + "read from other premises, received messages and freshly generated values."),
         step("3.", "Update the Forget set and the forgotten rules, never K",
             "Add x to a separate Forget set and r to the set of forgotten rules. K never shrinks "
-                + "(monotonic knowledge), so other occurrences of x in the model stay intact."),
+                + "(monotonic knowledge), so other occurrences of x in the model stay intact. "
+                + "A forgotten message leaves the Forget set when the human receives it again, or "
+                + "a message from which it can be derived; a forgotten rule stays forgotten."),
         step("4.", "Look up the send target m₂",
             "Read the outgoing message the rule is about to send — the payload of Send/Out."),
         step("5.", "Ask: can m₂ still be derived?",

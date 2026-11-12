@@ -312,12 +312,23 @@ public class ForgetMutationStrategy implements MutationStrategy {
       }
     }
     boolean forgetsReceived = receivedMessage != null && forgottenMessages.contains(receivedMessage);
+    // Re-acquisition candidates: Forget^i minus the messages forgotten again at this transition.
+    List<Message> relearnCandidates = new ArrayList<>(ctx.getForgetSet());
+    relearnCandidates.removeAll(forgottenMessages);
+    // K^{i+1} = K^i ∪ {m1} unless H forgets m1; then the lapse of this transition
     ctx.updateForTransition(receivedMessage, forgetsReceived ? receivedMessage : null);
     for (Message m : forgottenMessages) {
       if (!m.equals(receivedMessage)) ctx.addForget(m);
     }
-    ctx.addAllKnowledge(fresh);
     for (InferenceRule r : rulesForgottenNow) ctx.forgetRule(r);
+    // Re-acquisition (Algorithm 1, Phase 1; Example 3): if H takes in m1, every forgotten message
+    // that has a normal derivation using m1, judged after the lapse of this transition, leaves the
+    // Forget set (m1 itself included, when H receives a forgotten message again).
+    if (receivedMessage != null && !forgetsReceived) {
+      ctx.relearn(forgetDerivationChecker.relearnedBy(receivedMessage, relearnCandidates, ctx));
+    }
+    ctx.addAllKnowledge(fresh);
+    unavailable.removeIf(v -> forgetDerivationChecker.derivableUnderForgetting(v, ctx));
     if (annotated) ctx.markLapsed();
     ForgetContext noLapse = new ForgetContext(noLapseKnowledge, Collections.emptySet(),
         Collections.emptySet(), ctx.getBlockingMode(), ctx.getTypeMap());

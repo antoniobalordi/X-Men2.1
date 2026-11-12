@@ -161,6 +161,66 @@ public class ForgetDerivationChecker {
     }
 
     /**
+     * Re-acquisition (Algorithm 1, Phase 1; Example 3): the forgotten messages that the message
+     * {@code m1} just taken in gives back. {@code ctx} is the state after the lapse of this
+     * transition (K^{i+1} = K^i ∪ {m1}, Forget^{i+1} with the message forgotten now, R̄^{i+1} with the
+     * rule forgotten now); {@code candidates} are Forget^i minus the message forgotten now. A
+     * candidate m' is released iff it has a normal derivation π from K^i ∪ {m1} such that
+     * m1 ∈ Hyp_π, Blocked(Hyp_π \ {m1}, Forget^{i+1}) = ∅ and Rules(π) ∩ R̄^{i+1} = ∅: the new copy of
+     * m1 is never blocked. Every candidate is judged against the same state (one pass), so
+     * {@code ctx} is not modified.
+     */
+    public Set<Message> relearnedBy(Message m1, Collection<Message> candidates, ForgetContext ctx) {
+        Set<Message> relearned = new LinkedHashSet<>();
+        if (m1 == null || candidates == null || candidates.isEmpty() || ctx == null) {
+            return relearned;
+        }
+        // Hyp_π \ {m1} must be unblocked; m1 itself is always usable.
+        List<Message> others = new ArrayList<>();
+        for (Message h : ctx.getDerivationKnowledge()) {
+            if (!h.equals(m1) && !blockingChecker.isBlocked(h, ctx)) others.add(h);
+        }
+        List<Message> withM1 = new ArrayList<>(others);
+        withM1.add(m1);
+        java.util.function.Predicate<InferenceRule> allowed = DolevYaoDeducer.excluding(ctx.getForgottenRules());
+        DolevYaoDeducer deducer = new DolevYaoDeducer(privateFunctions);
+        for (Message f : candidates) {
+            if (hasDerivationUsing(f, m1, others, withM1, allowed, deducer, ctx)) relearned.add(f);
+        }
+        if (!relearned.isEmpty()) {
+            log.info("Re-acquisition: receiving {} gives back {}", m1.represent(),
+                     relearned.stream().map(Message::represent).toList());
+        }
+        return relearned;
+    }
+
+    /**
+     * Whether {@code f} has a normal derivation from {@code withM1} that uses {@code m1} as a
+     * hypothesis and no forgotten rule. Normalisation keeps a subset of the hypotheses and rules of
+     * a derivation (Sec. 3.2), so the deducer decides it exactly unless f is also derivable without
+     * m1; only then are the normal derivations enumerated.
+     */
+    private boolean hasDerivationUsing(Message f, Message m1, List<Message> others, List<Message> withM1,
+                                       java.util.function.Predicate<InferenceRule> allowed,
+                                       DolevYaoDeducer deducer, ForgetContext ctx) {
+        if (f.equals(m1)) return true; // H receives f again: the derivation of f from m1 alone
+        if (!deducer.derivable(f, withM1, allowed)) return false;
+        if (!deducer.derivable(f, others, allowed)) return true; // every derivation uses m1
+        NormalDerivationEnumerator.Result r = enumerate(f, new LinkedHashSet<>(withM1));
+        for (Derivation d : r.derivations()) {
+            if (blockingChecker.extractHypotheses(d).contains(m1)
+                && blockingChecker.forgottenRulesUsed(d, ctx).isEmpty()) {
+                return true;
+            }
+        }
+        if (r.truncated()) {
+            log.warn("Re-acquisition of {}: the enumeration of its normal derivations was truncated; "
+                     + "a derivation using {} may have been missed", f.represent(), m1.represent());
+        }
+        return false;
+    }
+
+    /**
      * Enumerates the normal derivations of {@code target} from {@code knowledge} with the active
      * limits, reporting truncation.
      */
