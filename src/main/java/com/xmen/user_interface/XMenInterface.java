@@ -398,8 +398,10 @@ public class XMenInterface extends Application {
       splashPlayer = new MediaPlayer(splashMedia);
       splashPlayer.setCycleCount(1);
       splashPlayer.setAutoPlay(false);
-      splashPlayer.setMute(false);
-      splashPlayer.setVolume(1.0);
+      // The splash plays silently: the clip carries no audio track and the
+      // player stays muted in case an older cached copy still has one.
+      splashPlayer.setMute(true);
+      splashPlayer.setVolume(0);
       this.mediaPlayer = splashPlayer;
 
       splashMediaView.setMediaPlayer(splashPlayer);
@@ -471,7 +473,7 @@ public class XMenInterface extends Application {
 
       splashRoot.getChildren().add(splashMediaView);
       videoLoaded = true;
-      log.info("Splash video '{}' loaded at {}x{} with audio.",
+      log.info("Splash video '{}' loaded at {}x{} (muted).",
           SPLASH_VIDEO_RESOURCE, MAIN_WIDTH, MAIN_HEIGHT);
     } catch (Exception e) {
       log.warn("Splash video '{}' not playable; falling back to image: {}",
