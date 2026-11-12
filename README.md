@@ -28,7 +28,7 @@
 > ### 🚀 [**Section 1 — Quick Start (just use the app)**](#-section-1--quick-start-just-use-the-app)
 > *The easiest, fastest path to test the functionality. Download an installer, click through the prompts, upload a `.spthy`, hit Start Mutation. No JDK, no Git, no command line.*
 
-- [What X-Men 2.1 does](#-what-x-men-20-actually-does-no-jargon)
+- [What X-Men 2.1 does](#-what-x-men-21-actually-does-no-jargon)
   - [The 30-second mental model](#the-30-second-mental-model)
   - [The mutation menu — what each checkbox actually does](#the-mutation-menu--what-each-checkbox-actually-does)
   - [The end-to-end flow — step by step](#the-end-to-end-flow--step-by-step)
@@ -75,7 +75,7 @@
 > ceremony participants (or agents), such as the system, or with attackers,
 > who may be internal or external to the ceremony.*
 
-**X-Men 2.0** automates the analysis of such ceremonies by **mutating** them
+**X-Men 2.1** automates the analysis of such ceremonies by **mutating** them
 according to a formal catalog of human-induced deviations and feeding the
 mutated models to [Tamarin](https://tamarin-prover.github.io/) for
 verification. The current toolchain implements the following mutations:
@@ -89,7 +89,7 @@ verification. The current toolchain implements the following mutations:
 | **FORGET** | A user forgets to add newly acquired information to their knowledge, forgets some information they previously possessed (*atomic forgetting*), or forgets how to apply an inference rule such as decrypting or projecting (*procedural forgetting*) |
 
 The **Forget** mutation — the most recent addition — is the focus of the
-companion research paper and is the engine behind X-Men 2.0's example use case,
+companion research paper and is the engine behind X-Men 2.1's example use case,
 the **Bank Login ceremony**. It models the eminently human behavior of
 forgetting a credential and substituting a similar one from memory.
 
@@ -99,7 +99,7 @@ forgetting a credential and substituting a similar one from memory.
 <br/>
 
 Typically, protocol analysis assumes that the human users act according to the
-ceremony specification. However, in reality, users do not. X-Men 2.0 models this by
+ceremony specification. However, in reality, users do not. X-Men 2.1 models this by
 generating executable mutated ceremony models that Tamarin can analyze
 end-to-end, capturing attacks that depend on human mistakes rather than
 cryptographic weaknesses.
@@ -110,7 +110,7 @@ cryptographic weaknesses.
 
 > # 🚀 Section 1 — Quick Start (just use the app)
 >
-> **This is the easiest path to test X-Men 2.0's functionality.** Pick the
+> **This is the easiest path to test X-Men 2.1's functionality.** Pick the
 > installer that matches your operating system (OS), run through the prompts, double-click
 > the app, upload a `.spthy` file, and click **Start Mutation**.
 >
@@ -119,13 +119,13 @@ cryptographic weaknesses.
 > ceremony files for a `.spthy` you already have, you can stop reading once
 > this section ends.
 
-## 🧠 What X-Men 2.0 actually does (no jargon)
+## 🧠 What X-Men 2.1 actually does (no jargon)
 
 Before you install the tool, it would be helpful to know what you're about to use. This whole section targets researchers involved in formal modeling and analysis of security protocols.
 
 ### The 30-second mental model
 
-You hand X-Men 2.0 **one** ceremony file (`.spthy`). X-Men 2.0 hands you back
+You hand X-Men 2.1 **one** ceremony file (`.spthy`). X-Men 2.1 hands you back
 **many** mutated variants of that ceremony (`.m` files inside a `.zip`).
 Each variant is the same ceremony **with one realistic human mistake baked
 into it**. You then feed those variants into the [Tamarin
@@ -142,7 +142,7 @@ Prover](https://tamarin-prover.github.io/) (or any tool that consumes
 ```
 
 > 💡 **Why does this matter?** Standard security analysis assumes the human
-> follows the script perfectly. Real people don't. X-Men 2.0 generates the
+> follows the script perfectly. Real people don't. X-Men 2.1 generates the
 > "what if the human messed up like *this*?" versions automatically, so you
 > can catch attacks that only show up when a human makes a mistake.
 
@@ -165,12 +165,12 @@ example.
 | **Replace → Sub Messages** | The user sends a message of the **right type** but with a **wrong piece** inside.                                                                                                                | Pasting the wrong meeting ID into an otherwise-correct reply. |
 | **Replace → Type** | The user swaps one value for **another value of the same kind**.                                                                                                                                  | Using yesterday's QR code instead of today's. |
 | **Combination → Combination in Addition** | Two mistakes at once: the user **adds** an extra send **and** uses a **replaced** value in it.                                                                                                    | Tapping a second card *and* using someone else's card to do it. |
-| **Combination → Combination Only** | Same as above but X-Men 2.0 *only* generates the combined case (no plain Add results).                                                                                                                | Same scenario, narrower output. |
+| **Combination → Combination Only** | Same as above but X-Men 2.1 *only* generates the combined case (no plain Add results).                                                                                                                | Same scenario, narrower output. |
 | **Forget Mutation** | The user **had** the right value at some point but **can't recall it now** (`Forget(x)`), or still has every value but **no longer knows how to do a step** such as decrypting (`ForgetRule(r)`). | Forgetting your bank password and typing the one for a different bank; forgetting how to decrypt the bank's challenge. |
-| **Forget Mutation using external Haskell Script** | Same Forget behavior, same result but X-Men 2.0 hands the heavy "what can the user still figure out?" math to an optional external Haskell helper. | (Same as above.) |
+| **Forget Mutation using external Haskell Script** | Same Forget behavior, same result but X-Men 2.1 hands the heavy "what can the user still figure out?" math to an optional external Haskell helper. | (Same as above.) |
 | **Neglect Mutation** | The user **doesn't check** something they should have.                                                                                                                                            | Accepting an e-ticket without comparing the date on it to today's date. |
 
-> 🛈 You can tick **as many checkboxes as you want at once** — X-Men 2.0 generates
+> 🛈 You can tick **as many checkboxes as you want at once** — X-Men 2.1 generates
 > a separate `.m` file for every requested mutation, so you get a full bundle
 > in a single run.
 
@@ -182,9 +182,9 @@ Here is exactly what happens between you clicking **Start Mutation** and a
 1. **You tick** the mutation checkboxes you care about.
 2. **You upload** your `.spthy` ceremony with the **Upload File** button.
 3. **You click Start Mutation.**
-4. X-Men 2.0 **reads your ceremony** and figures out different roles (including the human), 
+4. X-Men 2.1 **reads your ceremony** and figures out different roles (including the human), 
 their interactions, and initial knowledge to begin with.
-5. For **each selected mutation**, X-Men 2.0 creates one (or several) variants of
+5. For **each selected mutation**, X-Men 2.1 creates one (or several) variants of
    the ceremony with that mutation, and writes each variant
    to its file: `MyCeremony_M0.m`, `MyCeremony_M1.m`, `MyCeremony_M2.m`, …
 6. The files are saved to **`~/.xmen/runs/`** on your computer (this folder
@@ -193,13 +193,13 @@ their interactions, and initial knowledge to begin with.
    Start Mutation.
 8. **Click Download** to save a single `.zip` of every generated `.m` file
    wherever you'd like.
-9. (Outside X-Men 2.0) You feed those `.m` files to Tamarin to discover *which*
+9. (Outside X-Men 2.1) You feed those `.m` files to Tamarin to discover *which*
    variants violate your security goals. Each variant corresponds to an attack due to human 
    mutations you didn't know your ceremony was vulnerable to.
 
 ### Forget mutation — what the "derivation tree" is and why you'll see it
 
-**Forget** is the deepest mutation X-Men 2.0 ships and it's the one that uses a
+**Forget** is the deepest mutation X-Men 2.1 ships and it's the one that uses a
 derivation tree, so it gets its own short explainer.
 
 > 🧩 **The question Forget is trying to answer:**  
@@ -224,7 +224,7 @@ Suppose the human is asked to send the message
 - `my_private_key`
 - `the bank's public key`
 
-The derivation tree X-Men 2.0 builds looks like this:
+The derivation tree X-Men 2.1 builds looks like this:
 
 ```
       (my_account, sign(my_account, my_private_key))     ← the message to send
@@ -241,7 +241,7 @@ The derivation tree X-Men 2.0 builds looks like this:
 
 Every leaf is in *remembered* knowledge → the message can be built →
 **the send goes through unchanged**. Now imagine the human **forgot
-`my_private_key`**. The right branch can't be completed. X-Men 2.0 marks the
+`my_private_key`**. The right branch can't be completed. X-Men 2.1 marks the
 tree as **blocked** and tries to replace the forgotten leaf for *another value
 the human still remembers of the same type* — that's where you sometimes
 get the *"sent the wrong password"* style attack. If no compatible replacement
@@ -362,13 +362,13 @@ each mutated variant after Start Mutation finishes. Handy when you want to
 
 When you tick **Forget Mutation**, the app enables two radio choices. 
 The radio choices — **Infinite** and **Specified Depth** — control **how
-hard X-Men 2.0 tries** when building the derivation trees.
+hard X-Men 2.1 tries** when building the derivation trees.
 
 The reason this knob exists: a message can have many derivations, and listing
-all of them can be expensive. X-Men 2.0 only considers *normal* derivations (no
+all of them can be expensive. X-Men 2.1 only considers *normal* derivations (no
 value is rebuilt from itself), so the list is always finite, but it can be large.
 
-Whether the send is preserved does **not** depend on this setting: X-Men 2.0
+Whether the send is preserved does **not** depend on this setting: X-Men 2.1
 decides exactly whether some usable derivation exists. The setting only bounds
 the list of derivations that is printed in the report and from which REPLACE
 variants are built; when the bound cuts the list, the report says
@@ -376,8 +376,8 @@ variants are built; when the bound cuts the list, the report says
 
 | Setting | What it does | Best for | Trade-off |
 | --- | --- | --- | --- |
-| **Infinite Derivations** *(default)* | Let X-Men 2.0 keep building trees until it has explored **every** way the human could still construct each message. | Small to medium ceremonies where you want to catch every possible substitution attack. | Slower and produces more `.m` files. On big ceremonies, generation can take minutes. |
-| **Specified Depth** | You type a number `N` in the box that appears. X-Men 2.0 only considers derivations that nest operations at most `N` deep. | Big ceremonies where Infinite is too slow, or when you only care about "obvious" mistakes that don't require fancy multi-step constructions. | May miss substitutions that need deeper nesting. Faster and smaller output. |
+| **Infinite Derivations** *(default)* | Let X-Men 2.1 keep building trees until it has explored **every** way the human could still construct each message. | Small to medium ceremonies where you want to catch every possible substitution attack. | Slower and produces more `.m` files. On big ceremonies, generation can take minutes. |
+| **Specified Depth** | You type a number `N` in the box that appears. X-Men 2.1 only considers derivations that nest operations at most `N` deep. | Big ceremonies where Infinite is too slow, or when you only care about "obvious" mistakes that don't require fancy multi-step constructions. | May miss substitutions that need deeper nesting. Faster and smaller output. |
 
 #### How to choose, in one paragraph
 
@@ -396,7 +396,7 @@ substitutions for a quick sanity check.
 
 | Location | What's in it |
 | --- | --- |
-| `~/.xmen/runs/` | Every `.m` mutation file X-Men 2.0 generates on your computer. Overwritten on the next run, so save anything you want to keep. |
+| `~/.xmen/runs/` | Every `.m` mutation file X-Men 2.1 generates on your computer. Overwritten on the next run, so save anything you want to keep. |
 | The **Download** button | One `.zip` bundling every `.m` from the latest run, ready to save anywhere you want. |
 | `~/.xmen/settings.json` | Your saved theme, vocabulary profile, and UI preferences. Persists across launches. |
 
@@ -416,10 +416,10 @@ matches your machine, then follow the per-OS notes below:
 
 | Platform | Installer | Notes |
 | --- | --- | --- |
-| Windows 10/11 | [**Download X-Men.exe**](https://github.com/rish-kar/X-Men_2.0/releases/latest/download/X-Men.exe) | Per-user install; no admin rights needed. |
-| macOS (Intel) | [**Download X-Men-x64.dmg**](https://github.com/rish-kar/X-Men_2.0/releases/latest/download/X-Men-x64.dmg) | x86_64 build; runs natively on Intel Macs. |
-| macOS (Apple Silicon) | [**Download X-Men-arm64.dmg**](https://github.com/rish-kar/X-Men_2.0/releases/latest/download/X-Men-arm64.dmg) | arm64 build; runs natively on M1/M2/M3/M4 Macs. |
-| Linux (Debian / Ubuntu) | [**Download X-Men.deb**](https://github.com/rish-kar/X-Men_2.0/releases/latest/download/X-Men.deb) | x86_64 `.deb`; tested on Ubuntu 22.04–26.04. |
+| Windows 10/11 | [**Download X-Men.exe**](https://github.com/antoniobalordi/X-Men2.1/releases/latest/download/X-Men.exe) | Per-user install; no admin rights needed. |
+| macOS (Intel) | [**Download X-Men-x64.dmg**](https://github.com/antoniobalordi/X-Men2.1/releases/latest/download/X-Men-x64.dmg) | x86_64 build; runs natively on Intel Macs. |
+| macOS (Apple Silicon) | [**Download X-Men-arm64.dmg**](https://github.com/antoniobalordi/X-Men2.1/releases/latest/download/X-Men-arm64.dmg) | arm64 build; runs natively on M1/M2/M3/M4 Macs. |
+| Linux (Debian / Ubuntu) | [**Download X-Men.deb**](https://github.com/antoniobalordi/X-Men2.1/releases/latest/download/X-Men.deb) | x86_64 `.deb`; tested on Ubuntu 22.04–26.04. |
 
 > 🗂️ **Where mutation output goes.** Generated `.m` files are written under
 > `~/.xmen/runs/` regardless of OS, so the app never needs to write inside its
@@ -489,7 +489,7 @@ Then double-click **X-Men.app** from Applications.
 | *"X-Men is damaged and can't be opened. You should move it to the Trash."* | Quarantine flag from the download. | Run `xattr -dr com.apple.quarantine /Applications/X-Men.app`.                                                         |
 | App icon bounces in the Dock, then disappears. | Gatekeeper killed it silently. | Open **Privacy & Security** within 60 s and click **Open Anyway**.                                                    |
 | *"This Mac is not running on the right architecture."* | Downloaded the wrong .dmg. | Use `X-Men-x64.dmg` on Intel Mac, `X-Men-arm64.dmg` on Apple Silicon.                                                 |
-| Splash plays but the main window never appears. | Stale `~/.xmen/settings.json` referencing a theme that no longer exists. | Quit X-Men 2.0, run `rm ~/.xmen/settings.json`, relaunch.                                                             |
+| Splash plays but the main window never appears. | Stale `~/.xmen/settings.json` referencing a theme that no longer exists. | Quit X-Men 2.1, run `rm ~/.xmen/settings.json`, relaunch.                                                             |
 | Screen goes black / Mac freezes shortly after launch. | JavaFX GStreamer pipeline hung the WindowServer while decoding the splash or background video. | If you hit it on another platform, set `XMEN_BG_VIDEO=false` before launch (see *Disabling background videos* below). |
 
 **Disabling background videos (any OS)**
@@ -540,7 +540,7 @@ XMEN_BG_VIDEO`) to re-enable the videos.
 Fedora / RHEL builds are not currently published — `mvnw clean package -P installer -Djpackage.type=RPM`
 on a Fedora host produces a working `.rpm` if you need one.
 
-### 🧹 Uninstalling X-Men 2.0
+### 🧹 Uninstalling X-Men 2.1
 
 | OS | How to uninstall |
 | --- | --- |
@@ -571,7 +571,7 @@ Once the app is installed and open:
    between runs.)
 
 That's the whole user-facing flow. Everything below is for developers who
-want to build, extend, or script X-Men 2.0 from the command line.
+want to build, extend, or script X-Men 2.1 from the command line.
 
 ---
 
@@ -621,7 +621,7 @@ want to build, extend, or script X-Men 2.0 from the command line.
 
 ## 🚀 Local Setup
 
-The shortest path from a clean machine to a running X-Men 2.0 instance built
+The shortest path from a clean machine to a running X-Men 2.1 instance built
 from source.
 
 ### Installing Java and Maven
@@ -709,8 +709,8 @@ git --version
 ### Cloning the Project
 
 ```bash
-git clone <repository-url>
-cd X-Men_2.0
+git clone https://github.com/antoniobalordi/X-Men2.1.git
+cd X-Men2.1
 ```
 
 > Paths containing apostrophes (e.g. `a folder named O'Reilly`) are supported
@@ -723,7 +723,7 @@ cd X-Men_2.0
 1. Download **IntelliJ IDEA Community Edition** from
    [JetBrains](https://www.jetbrains.com/idea/download/).
 2. Install for your OS.
-3. Launch IntelliJ ▸ **Open…** ▸ select the cloned `X-Men_2.0` folder.
+3. Launch IntelliJ ▸ **Open…** ▸ select the cloned `X-Men2.1` folder.
 4. IntelliJ auto-detects `pom.xml`. If it doesn't, right-click `pom.xml` ▸
    **Add as Maven Project**.
 
@@ -765,7 +765,7 @@ In IntelliJ:
 The Native UI looks like this:
 
 <p align="center">
-  <img src="src/main/resources/images/img.png" alt="X-Men 2.0 native UI" width="640"/>
+  <img src="src/main/resources/images/img.png" alt="X-Men 2.1 native UI" width="640"/>
 </p>
 
 From the UI:
@@ -784,7 +784,7 @@ From the UI:
 1. Install [Postman](https://www.postman.com/downloads/).
 2. **File ▸ Import** ▸ select
    `src/main/resources/X-Men.postman_collection.json`.
-3. The full **X-Men 2.0** collection appears in the sidebar with one folder per
+3. The full **X-Men 2.1** collection appears in the sidebar with one folder per
    mutation type.
 4. With the Spring Boot app running, pick a request (e.g. *Forget Mutation*),
    attach a `.spthy` file under `form-data ▸ file`, and **Send**.
@@ -802,7 +802,7 @@ streamed `.zip` archives containing the mutated `.m` files.
 
 ### Browsing the API with Swagger UI
 
-X-Men 2.0 ships with **[springdoc-openapi](https://springdoc.org/)**, which means
+X-Men 2.1 ships with **[springdoc-openapi](https://springdoc.org/)**, which means
 the moment the Spring Boot app is running you get a **live, interactive API
 explorer** in your browser — no extra setup, no extra dependencies, and no
 need to write or import a Postman collection just to poke at an endpoint.
@@ -942,7 +942,7 @@ curl -X POST "http://localhost:8081/api/generateMutations" \
 <td>
 
 > **Docker is for API testing and service-mode runs only.**  
-> X-Men 2.0's primary interface is a native JavaFX desktop application. Docker
+> X-Men 2.1's primary interface is a native JavaFX desktop application. Docker
 > Desktop cannot open that JavaFX UI as a normal Windows/macOS/Linux desktop
 > window from inside a Linux container. Use Docker when you want a reproducible
 > Spring Boot API runtime for Swagger, Postman, curl, or integration testing.
@@ -953,7 +953,7 @@ curl -X POST "http://localhost:8081/api/generateMutations" \
 </tr>
 </table>
 
-X-Men 2.0 ships with a production-grade **multi-stage `Dockerfile`**:
+X-Men 2.1 ships with a production-grade **multi-stage `Dockerfile`**:
 
 - **Stage 1** uses `maven:3.9-eclipse-temurin-21` to compile and package.
 - **Stage 2** runs the resulting jar on a slim `eclipse-temurin:21-jre-noble` image
@@ -986,16 +986,16 @@ http://localhost:8081/swagger-ui/index.html
 
 ### Docker Compose
 
-A reference `docker-compose.yml` is included. It runs the X-Men 2.0 Spring Boot API
+A reference `docker-compose.yml` is included. It runs the X-Men 2.1 Spring Boot API
 service by itself, and — under the optional `haskell` profile — also brings up
 the Haskell derivation service on `9091`, wired together over Compose's default
 network.
 
 ```bash
-# X-Men 2.0 only
+# X-Men 2.1 only
 docker compose up --build
 
-# X-Men 2.0 + Haskell Derivation Service
+# X-Men 2.1 + Haskell Derivation Service
 docker compose --profile haskell up --build
 
 # Tear everything down
@@ -1027,7 +1027,7 @@ docker run --rm -p 9090:9090 \
 
 ## 🎨 Settings, Vocabulary & Themes
 
-X-Men 2.0 ships with a runtime-mutable settings layer so the same tool can be re-targeted at
+X-Men 2.1 ships with a runtime-mutable settings layer so the same tool can be re-targeted at
 different naming conventions and re-skinned with a new color palette **without changing
 any code**.
 
@@ -1136,7 +1136,7 @@ documented in
 > runs in its own process and is invoked over HTTP. It is **not bundled with
 > the installer, not built by `mvn install`, and not exercised by the default
 > test suite**. The default in-process Java derivation engine handles every
-> Forget mutation X-Men 2.0 ships with, so the Haskell route is **currently
+> Forget mutation X-Men 2.1 ships with, so the Haskell route is **currently
 > out of scope for this submission** and is documented below only for
 > completeness and future work.
 
@@ -1154,7 +1154,7 @@ the failure-handling contract, and a focused troubleshooting table.
 ## 🗂 Project Structure
 
 ```
-X-Men_2.0/
+X-Men2.1/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/xmen/

@@ -85,7 +85,7 @@ public class XMenInterface extends Application {
   private static final String message = "Error while performing mutation";
 
   /** Splash video resource (under src/main/resources). */
-  private static final String SPLASH_VIDEO_RESOURCE = "X - Men 2.0.mp4";
+  private static final String SPLASH_VIDEO_RESOURCE = "X - Men 2.1.mp4";
   private static File cachedSplashVideoFile;
 
   /** Design size — used as a minimum before maximize on the chosen monitor. */
@@ -177,7 +177,7 @@ public class XMenInterface extends Application {
     Scene splashScene = new Scene(splashRoot, screen.getWidth(), screen.getHeight());
     splashScene.setFill(Color.BLACK);
     stage.setScene(splashScene);
-    stage.setTitle("X-Men 2.0");
+    stage.setTitle("X-Men 2.1");
     // The original foreground can scroll within smaller logical screen bounds.
     stage.setMinWidth(Math.min(640, screen.getWidth()));
     stage.setMinHeight(Math.min(480, screen.getHeight()));

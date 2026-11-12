@@ -328,7 +328,7 @@ class ChatBotServiceSmokeTest {
         .contains("forgetMutationSet")
         .contains("Flags");
 
-    assertThat(bot.respond("what is PSpecial in X-Men 2.0"))
+    assertThat(bot.respond("what is PSpecial in X-Men 2.1"))
         .contains("**Definition**")
         .contains("groups multiple values")
         .containsIgnoringCase("angle brackets");
@@ -338,7 +338,7 @@ class ChatBotServiceSmokeTest {
   void xmen_manual_entries_answer_operation_and_derivation_questions() {
     ChatBotService bot = ChatBotService.getInstance();
 
-    assertThat(bot.respond("what are the X-Men 2.0 manual case studies"))
+    assertThat(bot.respond("what are the X-Men 2.1 manual case studies"))
         .contains("**Definition**")
         .contains("Oyster")
         .contains("SAML")
