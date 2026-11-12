@@ -72,6 +72,7 @@ Trigger by:
     git tag -a vX.Y.Z -m "Release vX.Y.Z"
     git push xmen21 vX.Y.Z
 
-…or via the "Run workflow" button on GitHub Actions. Run it on the tag
-(pick the tag under "Use workflow from") to publish the release assets;
-run on a branch it only uploads workflow artifacts.
+…or via the "Run workflow" button on GitHub Actions (run it from main):
+    - release_tag empty:      trial build, installers as workflow artifacts
+    - release_tag = vX.Y.Z:   builds that tag's sources and attaches the
+                              installers to its GitHub Release

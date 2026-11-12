@@ -6,8 +6,12 @@ on:
       - "v*"
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: "Existing tag to publish (e.g. v1.2.0): builds that tag's sources with this workflow and attaches the installers to its release. Leave blank for a trial build."
+        required: false
+        default: ""
       app_version:
-        description: "App version for jpackage (X.Y.Z, no SNAPSHOT). Leave blank to use the pom.xml version."
+        description: "Trial builds only: app version for jpackage (X.Y.Z). Leave blank to use the pom.xml version."
         required: false
         default: ""
 
@@ -18,14 +22,12 @@ jobs:
   build:
     name: Build ${{ matrix.asset_name }}
     runs-on: ${{ matrix.os }}
-    # Per-job timeout caps the macos-13 (Intel) job at 60 min so a scarce
+    # Per-job timeout caps the Intel macOS job at 60 min so a scarce
     # Intel-runner queue can't hold the release open forever. The fast jobs
-    # finish in <15 min, so this is only relevant when Apple-Silicon-only
-    # runner pools delay an Intel pick-up.
+    # finish in <15 min.
     timeout-minutes: ${{ matrix.timeout_minutes }}
-    # macos-13 Intel availability fluctuates; let the other three platforms
-    # publish even if Intel ends up timing out. The user can re-run just the
-    # X-Men-x64.dmg job from the workflow page when capacity returns.
+    # If one platform fails, the others still publish; re-run just the failed
+    # job from the workflow page.
     continue-on-error: ${{ matrix.continue_on_error }}
     strategy:
       fail-fast: false
@@ -38,11 +40,10 @@ jobs:
             artifact_glob: target/dist/*.exe
             timeout_minutes: 45
             continue_on_error: false
-          # Intel-Mac .dmg: install the x86_64 Temurin JDK on the Apple-Silicon
-          # runner; macos-14 ships with Rosetta 2, so the x86_64 JDK + jpackage
-          # auto-execute through it and the resulting launcher / bundled JRE are
-          # x86_64 native for Intel Macs.
-          - os: macos-14
+          # Intel-Mac .dmg on a native x86_64 runner. GitHub retired the
+          # macos-14 images on 2026-11-02; macos-15-intel is the Intel label
+          # (supported until August 2027).
+          - os: macos-15-intel
             arch: x64
             macho_arch: x86_64
             jdk_arch: x64
@@ -58,7 +59,7 @@ jobs:
           # "arm64" — on a real Apple-Silicon Mac without Rosetta 2 that launcher
           # silently fails to start, which was the "app isn't starting" report.
           # Pinning aarch64 here makes the build truly native.
-          - os: macos-14
+          - os: macos-15
             arch: arm64
             macho_arch: arm64
             jdk_arch: aarch64
@@ -77,11 +78,15 @@ jobs:
             continue_on_error: false
 
     steps:
+      # A manual run with release_tag builds that tag's sources; otherwise
+      # the commit that triggered the run.
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -120,28 +125,40 @@ jobs:
 
       # The pom.xml version is the single source of truth. A release tag must
       # name the same version, so the installers never carry a stale number.
+      # Outputs: version (always) and tag (set only when publishing).
       - name: Resolve app version
         id: appver
         shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          APP_VERSION_INPUT: ${{ inputs.app_version }}
         run: |
           set -euo pipefail
           pom_version="$(./mvnw -B -q -ntp help:evaluate -Dexpression=project.version -DforceStdout | tail -n 1)"
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            v="${GITHUB_REF_NAME#v}"
+          tag="${RELEASE_TAG:-}"
+          if [[ -z "$tag" && "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            tag="${GITHUB_REF_NAME}"
+          fi
+          if [[ -n "$tag" ]]; then
+            if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid release tag '$tag' (expected vX.Y.Z)"
+              exit 1
+            fi
+            v="${tag#v}"
             if [[ "$v" != "$pom_version" ]]; then
-              echo "::error::Tag ${GITHUB_REF_NAME} does not match the pom.xml version ${pom_version}"
+              echo "::error::Tag $tag does not match the pom.xml version ${pom_version}"
               exit 1
             fi
           else
-            v="${{ github.event.inputs.app_version }}"
-            v="${v:-$pom_version}"
+            v="${APP_VERSION_INPUT:-$pom_version}"
           fi
           if [[ ! "$v" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
             echo "::error::Invalid app version '$v' (expected X.Y.Z)"
             exit 1
           fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
-          echo "Using app version: $v"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Using app version: $v${tag:+ (publishing to $tag)}"
 
       # Single-step build for every platform. The architecture pin in
       # setup-java above is what makes the Apple-Silicon launcher boot:
@@ -213,14 +230,15 @@ jobs:
           ls -la release-assets
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.asset_name }}
           path: release-assets/${{ matrix.asset_name }}
           if-no-files-found: error
 
       - name: Upload GitHub Release asset
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        if: steps.appver.outputs.tag != ''
         with:
+          tag_name: ${{ steps.appver.outputs.tag }}
           files: release-assets/${{ matrix.asset_name }}
