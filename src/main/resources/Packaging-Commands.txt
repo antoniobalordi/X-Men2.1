@@ -2,7 +2,9 @@ X-Men packaging — quick reference
 ==================================
 
 The pom.xml ships an "installer" Maven profile that drives jpackage. The
-per-OS profile activations auto-pick the right icon format:
+installer version is the project <version> in pom.xml (shown as <version>
+in the file names below); override it with -Djpackage.appVersion=X.Y.Z. The per-OS profile activations
+auto-pick the right icon format:
     Windows -> packaging/x-men-icon.ico
     macOS   -> packaging/x-men-icon.icns
     Linux   -> packaging/x-men-icon.png
@@ -21,19 +23,19 @@ icons in src/main/resources/packaging/ are the latest output.)
 Requires:  JDK 21 on PATH + WiX Toolset 3.x on PATH
             (choco install wixtoolset --version 3.14.1 -y)
 
-    powershell -NoProfile -Command "& '.\mvnw.cmd' -B -ntp '-DskipTests' '-P' 'installer' '-Djpackage.type=EXE' '-Djpackage.appVersion=1.0.1' 'package'"
+    powershell -NoProfile -Command "& '.\mvnw.cmd' -B -ntp '-DskipTests' '-P' 'installer' '-Djpackage.type=EXE' 'package'"
 
-Output:    target\dist\X-Men-1.0.1.exe
+Output:    target\dist\X-Men-<version>.exe
 
 
 2) Local build — Windows MSI
 ----------------------------
-    & '.\mvnw.cmd' '-DskipTests' '-P' 'installer' '-Djpackage.type=MSI' '-Djpackage.appVersion=1.0.1' 'package'
+    & '.\mvnw.cmd' '-DskipTests' '-P' 'installer' '-Djpackage.type=MSI' 'package'
 
 
 3) Local build — APP_IMAGE folder (no installer tool needed)
 ------------------------------------------------------------
-    & '.\mvnw.cmd' '-DskipTests' '-P' 'installer' '-Djpackage.type=APP_IMAGE' '-Djpackage.appVersion=1.0.1' 'package'
+    & '.\mvnw.cmd' '-DskipTests' '-P' 'installer' '-Djpackage.type=APP_IMAGE' 'package'
 
 Output:    target\dist\X-Men\X-Men.exe       (run the folder; ships its own JRE)
 
@@ -42,9 +44,9 @@ Output:    target\dist\X-Men\X-Men.exe       (run the folder; ships its own JRE)
 ---------------------------
 On a Mac (Intel or Apple Silicon):
 
-    ./mvnw -DskipTests -P installer -Djpackage.type=DMG -Djpackage.appVersion=1.0.1 package
+    ./mvnw -DskipTests -P installer -Djpackage.type=DMG package
 
-Output:    target/dist/X-Men-1.0.1.dmg
+Output:    target/dist/X-Men-<version>.dmg
 
 The .dmg architecture matches the build host (run on Intel -> x86_64,
 run on Apple Silicon -> arm64). Run the matching .dmg on each Mac, or
@@ -55,17 +57,21 @@ ship both via GitHub Actions (see release.yml).
 ---------------------------
 On a Linux box with fakeroot installed (sudo apt-get install fakeroot):
 
-    ./mvnw -DskipTests -P installer -Djpackage.type=DEB -Djpackage.appVersion=1.0.1 package
+    ./mvnw -DskipTests -P installer -Djpackage.type=DEB package
 
-Output:    target/dist/x-men_1.0.1-1_amd64.deb
+Output:    target/dist/x-men_<version>-1_amd64.deb
 
 
 6) GitHub Actions release
 -------------------------
 .github/workflows/release.yml builds .exe, x64.dmg, arm64.dmg, and .deb on
-the matching runners and uploads them as release assets. Trigger by:
+the matching runners and uploads them as release assets. Set <version> in
+pom.xml first; the tag must name the same version or the workflow stops.
+Trigger by:
 
-    git tag v1.0.1
-    git push origin v1.0.1
+    git tag -a vX.Y.Z -m "Release vX.Y.Z"
+    git push xmen21 vX.Y.Z
 
-…or via the "Run workflow" button on GitHub Actions (no release publishing).
+…or via the "Run workflow" button on GitHub Actions. Run it on the tag
+(pick the tag under "Use workflow from") to publish the release assets;
+run on a branch it only uploads workflow artifacts.
