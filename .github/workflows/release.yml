@@ -192,10 +192,15 @@ jobs:
           test "$bundle_version" = "${{ steps.appver.outputs.version }}"
           jar_file="$(ls "$app"/Contents/app/X-Men_2.1-*.jar)"
           jar tf "$jar_file" | grep -q "javafx-graphics-.*-${{ matrix.javafx_classifier }}\\.jar"
+          # A bare "! cmd" never stops a set -e script, so test explicitly.
           if [ "${{ matrix.javafx_classifier }}" = "mac-aarch64" ]; then
-            ! jar tf "$jar_file" | grep -q "javafx-graphics-[0-9].*-mac\\.jar"
+            other='javafx-graphics-[0-9].*-mac\.jar'
           else
-            ! jar tf "$jar_file" | grep -q "javafx-graphics-.*-mac-aarch64\\.jar"
+            other='javafx-graphics-.*-mac-aarch64\.jar'
+          fi
+          if jar tf "$jar_file" | grep -q "$other"; then
+            echo "::error::Jar also bundles the JavaFX natives of the other Mac architecture"
+            exit 1
           fi
 
       - name: Verify Linux package version and media dependencies
@@ -212,6 +217,61 @@ jobs:
           grep -q "libglib2.0-0" <<< "$depends"
           grep -Eq "libavcodec[0-9]+|libavcodec-extra[0-9]+" <<< "$depends"
           grep -Eq "libavformat[0-9]+" <<< "$depends"
+          # The custom maintainer scripts (packaging/linux) must be the ones
+          # in the package, with every jpackage placeholder filled in.
+          ctrl="$(mktemp -d)"
+          dpkg-deb -e "$deb" "$ctrl"
+          grep -q 'PKG_VERSION="${{ steps.appver.outputs.version }}"' "$ctrl/postinst"
+          grep -q "metainfo.xml" "$ctrl/postinst"
+          grep -q "xdg-desktop-menu install" "$ctrl/postinst"
+          grep -q "metainfo.xml" "$ctrl/prerm"
+          grep -q "xdg-desktop-menu uninstall" "$ctrl/prerm"
+          if grep -nE "APPLICATION_[A-Z]|^(DESKTOP|LAUNCHER_AS_SERVICE)_[A-Z_]+$" "$ctrl/postinst" "$ctrl/prerm"; then
+            echo "::error::Unexpanded jpackage placeholder in the maintainer scripts"
+            exit 1
+          fi
+
+      # Install, reinstall (upgrade path) and remove the package on the
+      # runner: the menu entry and the AppStream metainfo with the release
+      # version must appear, survive the reinstall and go away on removal.
+      - name: Install and remove the .deb
+        if: runner.os == 'Linux'
+        shell: bash
+        timeout-minutes: 15
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          set -euo pipefail
+          deb="$(realpath target/dist/*.deb)"
+          meta=/usr/share/metainfo/com.xmen.app.metainfo.xml
+          desktop_files=(/usr/share/applications/x-men-X-Men.desktop /usr/local/share/applications/x-men-X-Men.desktop)
+          desktop_installed() {
+            for f in "${desktop_files[@]}"; do [ -f "$f" ] && return 0; done
+            return 1
+          }
+          check_installed() {
+            dpkg -s x-men | grep '^Version:'
+            test -f "$meta"
+            grep -q "<release version=\"${{ steps.appver.outputs.version }}\"" "$meta"
+            desktop_installed
+            test -f /usr/share/icons/hicolor/256x256/apps/x-men.png
+          }
+          sudo apt-get install -y "$deb"
+          check_installed
+          cat "$meta"
+          if command -v appstreamcli >/dev/null; then
+            appstreamcli validate --no-net "$meta" || echo "::warning::appstreamcli validate reported issues"
+          fi
+          sudo apt-get install -y --reinstall "$deb"
+          check_installed
+          sudo apt-get remove -y x-men
+          test ! -e "$meta"
+          if desktop_installed; then
+            echo "::error::Menu entry still present after removal"
+            exit 1
+          fi
+          test ! -e /usr/share/icons/hicolor/256x256/apps/x-men.png
+          echo "Install, reinstall and removal OK"
 
       - name: Normalize asset name
         shell: bash

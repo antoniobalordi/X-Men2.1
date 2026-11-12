@@ -15,7 +15,7 @@
     <artifactId>X-Men_2.1</artifactId>
     <!-- Release version: the installer version (jpackage.appVersion) and the
          v* release tag must match it; the release workflow checks the tag. -->
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <name>X-Men</name>
     <description>X-Men: A Mutation-Based Approach for the Formal Analysis of Security Ceremonies</description>
 
