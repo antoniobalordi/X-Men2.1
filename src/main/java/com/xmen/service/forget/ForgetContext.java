@@ -80,13 +80,13 @@ public class ForgetContext {
     }
 
     /**
-     * Updates the context for a transition where message m1 is received and message m is forgotten.
-     * Per Algorithm 1:
-     * - If m == m1 (lines 3-6): K, Forget and R̄ stay unchanged; m1 is not added to K
-     * - If m != m1 (lines 7-10): K ∪ {m1}, Forget ∪ {m}
-     * - If nothing is forgotten (lines 16-19): K ∪ {m1}, Forget unchanged
-     * In no case does a message leave the Forget set (lines 9, 14, 18): receiving a forgotten
-     * message again does not make it usable again.
+     * Phase 1 of Algorithm 1, before re-acquisition, for a transition where message m1 is received
+     * and message m is forgotten:
+     * - If m == m1: K, Forget and R̄ stay unchanged; m1 is not added to K. If m1 was in Forget it
+     *   stays there, since H has not taken in the new copy (p. 17).
+     * - Otherwise: K ∪ {m1}, Forget ∪ {m}.
+     * When H takes in m1, the forgotten messages it gives back (m1 itself included) are then
+     * released with {@link ForgetDerivationChecker#relearnedBy} and {@link #relearn}.
      *
      * @param m1 the received message
      * @param m the message being forgotten (null if no forget at this transition)
@@ -96,17 +96,23 @@ public class ForgetContext {
             return;
         }
         if (m != null && m.equals(m1)) {
-            // Forget the just-received message: K and Forget unchanged (Algorithm 1, lines 4-5)
-        } else {
-            // Normal case: add m1 to knowledge
-            if (m1 != null) {
-                knowledge.add(m1);
-            }
-            // If forgetting something else, add it to Forget (line 9); otherwise Forget is unchanged
-            // (lines 14, 18), even when m1 itself was forgotten earlier.
-            if (m != null) {
-                forgetSet.add(m);
-            }
+            return; // H forgets the message just received: nothing changes
+        }
+        if (m1 != null) {
+            knowledge.add(m1);
+        }
+        if (m != null) {
+            forgetSet.add(m);
+        }
+    }
+
+    /**
+     * Re-acquisition (Algorithm 1, Phase 1; Example 3): the given forgotten messages leave the
+     * Forget set. Forgotten rules are never released (p. 15).
+     */
+    public void relearn(Collection<Message> messages) {
+        if (messages != null) {
+            forgetSet.removeAll(messages);
         }
     }
 

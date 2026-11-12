@@ -124,15 +124,114 @@ class PaperExamplesTest {
   }
 
   @Test
-  @DisplayName("Forgetting a known message (Example 3); re-receiving it keeps it in Forget (Algorithm 1, line 18)")
-  void forgetKnownMessageThenReceiveAgain() {
+  @DisplayName("Example 3: forgetting a known message, then re-receiving it")
+  void example3() {
     Message c = senc(pair(a("m2"), a("m4")), a("m5"));
     ForgetContext ctx = new ForgetContext(set(c, a("m2"), a("m4")), Set.of(), BlockingMode.CASE1_WEAK, Map.of());
     ctx.updateForTransition(a("m1"), a("m2"));
     assertThat(ctx.getKnowledge()).containsExactlyInAnyOrder(c, a("m2"), a("m4"), a("m1"));
     assertThat(ctx.getForgetSet()).containsExactly(a("m2"));
-    // Example 3 of the manuscript removes m2 from Forget here; Algorithm 1 (line 18) does not.
-    ctx.updateForTransition(a("m2"), null);
+    assertThat(receive(ctx, a("m2"))).containsExactly(a("m2"));
+    assertThat(ctx.getForgetSet()).isEmpty();
+  }
+
+  /** Example 3 after H forgets m2: K = { {|m2,m4|}m5, m2, m4, m1 }, Forget = { m2 }. */
+  private static ForgetContext example3AfterLapse() {
+    Message c = senc(pair(a("m2"), a("m4")), a("m5"));
+    ForgetContext ctx = new ForgetContext(set(c, a("m2"), a("m4")), Set.of(), BlockingMode.CASE1_WEAK, Map.of());
+    ctx.updateForTransition(a("m1"), a("m2"));
+    return ctx;
+  }
+
+  /** Phase 1 for a transition that receives {@code m1} and forgets nothing (Algorithm 1). */
+  private Set<Message> receive(ForgetContext ctx, Message m1) {
+    List<Message> candidates = List.copyOf(ctx.getForgetSet());
+    ctx.updateForTransition(m1, null);
+    Set<Message> relearned = checker.relearnedBy(m1, candidates, ctx);
+    ctx.relearn(relearned);
+    return relearned;
+  }
+
+  @Test
+  @DisplayName("Example 3: receiving m5 makes m2 derivable again, so m2 leaves Forget")
+  void example3ReceiveKey() {
+    ForgetContext ctx = example3AfterLapse();
+    assertThat(checker.derivableUnderForgetting(a("m2"), ctx)).isFalse();
+    assertThat(receive(ctx, a("m5"))).containsExactly(a("m2"));
+    assertThat(ctx.getForgetSet()).isEmpty();
+    assertThat(checker.derivableUnderForgetting(a("m2"), ctx)).isTrue();
+  }
+
+  @Test
+  @DisplayName("Example 3: receiving {|m5|}m1 (m1 known) makes m2 derivable again")
+  void example3ReceiveWrappedKey() {
+    ForgetContext ctx = example3AfterLapse();
+    assertThat(receive(ctx, senc(a("m5"), a("m1")))).containsExactly(a("m2"));
+    assertThat(ctx.getForgetSet()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("Re-acquisition: a received message that does not give back m2 leaves Forget unchanged")
+  void unrelatedReceiveKeepsForget() {
+    ForgetContext ctx = example3AfterLapse();
+    assertThat(receive(ctx, a("m6"))).isEmpty();
+    assertThat(receive(ctx, senc(a("m5"), a("m7")))).isEmpty();
     assertThat(ctx.getForgetSet()).containsExactly(a("m2"));
+  }
+
+  /** Example 1: K = { {m}_mbar, {mbar}_m1, m1, mbar }, Forget = { mbar }; mbar is derivable via m1. */
+  private static ForgetContext example1Knowledge() {
+    Message mbar = a("mbar");
+    return new ForgetContext(set(senc(a("m"), mbar), senc(mbar, a("m1")), a("m1"), mbar),
+        set(mbar), BlockingMode.CASE1_WEAK, Map.of());
+  }
+
+  @Test
+  @DisplayName("Re-acquisition: receiving m1 again releases mbar, whose normal derivation uses m1")
+  void releasedWhenADerivationUsesTheReceivedMessage() {
+    ForgetContext ctx = example1Knowledge();
+    assertThat(receive(ctx, a("m1"))).containsExactly(a("mbar"));
+    assertThat(ctx.getForgetSet()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("Re-acquisition: a message no normal derivation of mbar uses does not release it")
+  void notReleasedWhenNoDerivationUsesTheReceivedMessage() {
+    ForgetContext ctx = example1Knowledge();
+    // mbar stays derivable (from {mbar}_m1 and m1), but no normal derivation of it uses m6.
+    assertThat(receive(ctx, a("m6"))).isEmpty();
+    assertThat(ctx.getForgetSet()).containsExactly(a("mbar"));
+  }
+
+  @Test
+  @DisplayName("Re-acquisition: closure case (ii), receiving the key <a,b> gives back a, b and x in one pass")
+  void receivedCopyIsNeverBlocked() {
+    // Forget = { a, b, x }; the pairing closure of { a, b } blocks <a,b>, but the new copy is usable.
+    Message ab = pair(a("a"), a("b"));
+    ForgetContext ctx = new ForgetContext(set(senc(a("x"), ab), a("a"), a("b"), a("x")),
+        set(a("a"), a("b"), a("x")), BlockingMode.CASE2_PAIRING, Map.of());
+    assertThat(receive(ctx, ab)).containsExactlyInAnyOrder(a("a"), a("b"), a("x"));
+    assertThat(ctx.getForgetSet()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("Re-acquisition: the new copy is usable even if the blocking closure blocks the old one")
+  void receivedCopyIsUsableUnderClosure() {
+    // Case 2: Forget = { a, b } blocks the pair <a,b>; receiving <a,b> again gives a and b back.
+    Message ab = pair(a("a"), a("b"));
+    ForgetContext ctx = new ForgetContext(set(ab, a("a"), a("b")), set(a("a"), a("b")),
+        BlockingMode.CASE2_PAIRING, Map.of());
+    assertThat(receive(ctx, ab)).containsExactlyInAnyOrder(a("a"), a("b"));
+    assertThat(ctx.getForgetSet()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("Re-acquisition: a rule forgotten at this or an earlier step blocks it, and is never released")
+  void forgottenRuleIsNotReleased() {
+    ForgetContext ctx = example3AfterLapse();
+    ctx.forgetRule(com.xmen.model.InferenceRule.SDEC);
+    assertThat(receive(ctx, a("m5"))).as("m2 needs sdec, which H has forgotten").isEmpty();
+    assertThat(ctx.getForgetSet()).containsExactly(a("m2"));
+    assertThat(ctx.getForgottenRules()).containsExactly(com.xmen.model.InferenceRule.SDEC);
   }
 }

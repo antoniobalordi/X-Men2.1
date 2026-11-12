@@ -247,6 +247,11 @@ the human still remembers of the same type* — that's where you sometimes
 get the *"sent the wrong password"* style attack. If no compatible replacement
 exists, the send is skipped instead.
 
+A forgotten message stays unusable in the later steps of the same run until
+the human **receives it again**, or receives a message from which it can be
+derived (e.g. the key that decrypts a ciphertext containing it). From then on
+it can be used again (*re-acquisition*, Example 3 of the paper).
+
 #### Procedural forgetting — forgetting *how* rather than *what*
 
 The forgetting above concerns a **message** (*atomic forgetting*: `Forget(x)`).
