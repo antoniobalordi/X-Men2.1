@@ -40,6 +40,11 @@ LAUNCHER_AS_SERVICE_SCRIPTS
 
 case "$1" in
     configure)
+        # xdg-desktop-menu fails ("No writable system menu directory found")
+        # when /etc/xdg/menus is missing, as on servers, WSL, containers and
+        # minimal installs without a desktop. Create it so the install
+        # succeeds there too; desktop systems already have it.
+        mkdir -p /etc/xdg/menus
 DESKTOP_COMMANDS_INSTALL
 LAUNCHER_AS_SERVICE_COMMANDS_INSTALL
 
