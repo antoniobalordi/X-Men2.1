@@ -74,8 +74,9 @@ RUN useradd --create-home --shell /bin/sh appuser
 USER appuser
 WORKDIR /app
 
-# Override the jar name with --build-arg if your version changes.
-ARG JAR_FILE=target/X-Men_2.0-0.0.1-SNAPSHOT.jar
+# Override the jar path with --build-arg if needed (default matches the
+# artifactId; the version comes from pom.xml).
+ARG JAR_FILE=target/X-Men_2.1-*.jar
 COPY --from=build /workspace/${JAR_FILE} app.jar
 
 # Defaults that match application.yaml fallbacks. All overridable at `docker run` time.

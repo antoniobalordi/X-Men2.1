@@ -28,7 +28,7 @@ src/main/resources    ←  you are here
 |------------------------------------| --- |
 | ⚙️ `application.yaml`              | Spring Boot configuration with env-var defaults (`SERVER_PORT`, `APP_CORS_ALLOWED_ORIGINS`, `DERIVATION_SERVICE_URL`, …). |
 | 🎬 `videos/1.mp4`–`videos/6.mp4`   | Randomized background videos for the JavaFX main scene. |
-| 🎬 `X - Men 2.0.mp4`               | Splash-screen video. |
+| 🎬 `X - Men 2.1.mp4`               | Splash-screen video. |
 | 📦 `X-Men.postman_collection.json` | Importable Postman collection — every mutation endpoint pre-wired. |
 | 🧪 `TrialCase.spthy`               | Sample SPTHY model used in demos and tests. |
 | 📝 `Packaging-Commands.txt`        | Packaging notes. |
@@ -76,7 +76,7 @@ src/main/resources    ←  you are here
 </details>
 
 <details>
-<summary>🎬 <strong>videos/*.mp4</strong> · <strong>X - Men 2.0.mp4</strong></summary>
+<summary>🎬 <strong>videos/*.mp4</strong> · <strong>X - Men 2.1.mp4</strong></summary>
 
 <br/>
 

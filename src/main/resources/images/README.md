@@ -42,7 +42,7 @@ Alert dialog icons for failure, warning, and the "no Forget action found" case. 
 <details>
 <summary>🦴 <strong>main_scene_dna_fallback.png</strong> · 🚀 <strong>splash_fallback_logo.png</strong></summary>
 
-Used when the corresponding `.mp4` media (`videos/*.mp4` / `X - Men 2.0.mp4`) can't be loaded — e.g. on systems without the JavaFX media module.
+Used when the corresponding `.mp4` media (`videos/*.mp4` / `X - Men 2.1.mp4`) can't be loaded — e.g. on systems without the JavaFX media module.
 
 </details>
 

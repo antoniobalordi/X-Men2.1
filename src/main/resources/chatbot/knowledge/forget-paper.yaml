@@ -1,19 +1,19 @@
 entries:
   - id: paper.forget.xmen2
-    title: X-Men 2.0 Forget paper
+    title: X-Men 2.1 Forget paper
     category: paper
-    terms: [X-Men 2.0 paper, Forget paper, formal modeling forget mutation, bank login forget paper]
+    terms: [X-Men 2.1 paper, Forget paper, formal modeling forget mutation, bank login forget paper]
     shortAnswer: |
-      The new paper formalizes Forget as a primitive X-Men mutation for human memory lapses and implements it in X-Men 2.0.
+      The new paper formalizes Forget as a primitive X-Men mutation for human memory lapses and implements it in X-Men 2.1.
     definition: |
       The paper extends mutation-based security ceremony analysis with a new Forget mutation. Forget models cases where a human either fails to store newly received information or can no longer use information already known.
     details:
       - The work keeps humans as first-class ceremony participants instead of treating them as perfect protocol agents.
       - Existing mutations are Skip, Add, Replace, Neglect, and Disorder; Forget fills the gap for memory loss.
-      - Forget is implemented in X-Men 2.0, a Java-based architecture that generates mutated models for Tamarin.
+      - Forget is implemented in X-Men 2.1, a Java-based architecture that generates mutated models for Tamarin.
       - The paper validates the mutation on a Bank Login ceremony and finds an authentication failure caused by forgetting the correct password.
     why: |
-      Questions about forgetting, blocked derivations, Bank Login, and X-Men 2.0 should use this source because it is more specific than the older mutation catalog.
+      Questions about forgetting, blocked derivations, Bank Login, and X-Men 2.1 should use this source because it is more specific than the older mutation catalog.
     related: [paper.forget.definition, paper.bank-login.attack, paper.xmen2.overview]
     followups:
       - What is the Forget mutation?
@@ -294,22 +294,22 @@ entries:
     related: [paper.bank-login.goals, paper.xmen2.overview, tamarin.rules]
 
   - id: paper.xmen2.overview
-    title: X-Men 2.0
+    title: X-Men 2.1
     category: xmen
-    terms: [X-Men 2.0, XMen 2.0, X-Men 2 architecture, automated analysis Forget, Java X-Men tool]
+    terms: [X-Men 2.1, XMen 2.1, X-Men 2 architecture, automated analysis Forget, Java X-Men tool]
     definition: |
-      X-Men 2.0 is the extended Java-based implementation of the mutation approach. It supports modular mutation generation, including the new Forget mutation, and emits models for Tamarin analysis.
+      X-Men 2.1 is the extended Java-based implementation of the mutation approach. It supports modular mutation generation, including the new Forget mutation, and emits models for Tamarin analysis.
     details:
       - The architecture is designed so new mutation strategies can be added without rewriting the whole tool.
       - It remains Tamarin-oriented, but the paper notes that the high-level approach is tool-agnostic.
       - The implementation automates generation of mutated formal models and uses Tamarin to prove or falsify lemmas.
       - The paper identifies derivation generation as the key machinery needed for Forget-triggered replacements.
     why: |
-      X-Men 2.0 is the implementation context for the new Forget paper and should be preferred over older answers when the user asks about local tool behavior.
+      X-Men 2.1 is the implementation context for the new Forget paper and should be preferred over older answers when the user asks about local tool behavior.
     related: [paper.forget.algorithm, paper.bank-login.model, xmen.pipeline]
 
   - id: paper.mutation.relationships-xmen2
-    title: Mutation relationships in X-Men 2.0
+    title: Mutation relationships in X-Men 2.1
     category: mutation
     terms: [mutation relationships, primitive mutation, derivable mutation, Forget relationship, Skip Add Replace Neglect Disorder Forget]
     definition: |
@@ -365,7 +365,7 @@ entries:
     details:
       - The target domain is security ceremonies, where humans participate in the protocol-relevant interaction.
       - The specific human deviation is forgetting information during the ceremony.
-      - The technical contribution is the Forget mutation and its implementation in X-Men 2.0.
+      - The technical contribution is the Forget mutation and its implementation in X-Men 2.1.
       - The validating example is a Bank Login ceremony analyzed with Tamarin.
     why: |
       This entry anchors questions that ask about the paper itself rather than one particular technical object.
@@ -382,7 +382,7 @@ entries:
       - Human mistakes can compromise the ceremony even when the protocol logic is cryptographically sound.
       - The X-Men approach models mistakes as mutations and analyzes mutated ceremony models.
       - "Forget captures two memory-lapse cases: failing to store newly acquired information and losing access to previously possessed information."
-      - X-Men 2.0 implements Forget and applies it to Bank Login.
+      - X-Men 2.1 implements Forget and applies it to Bank Login.
       - The paper also discusses how Forget relates to Skip, Add, Replace, Neglect, and Disorder.
     why: |
       The abstract makes clear that Forget is not a synonym for Skip. It is a knowledge-level mutation whose effects may later look like Skip, Replace, or Neglect.
@@ -393,10 +393,10 @@ entries:
     category: paper
     terms: [Forget paper contributions, contributions of new paper, memory lapse paper contributions]
     definition: |
-      The paper contributes the formal Forget mutation, an X-Men 2.0 implementation, a Bank Login analysis, and a classification of primitive versus derivable mutations.
+      The paper contributes the formal Forget mutation, an X-Men 2.1 implementation, a Bank Login analysis, and a classification of primitive versus derivable mutations.
     details:
       - Contribution 1 is the formalization of Forget as a mutation over human usable knowledge.
-      - Contribution 2 is the implementation of Forget in X-Men 2.0 with a modular architecture for adding mutations.
+      - Contribution 2 is the implementation of Forget in X-Men 2.1 with a modular architecture for adding mutations.
       - Contribution 3 is the Bank Login case study showing an attack caused by a human memory lapse.
       - Contribution 4 is the discussion of mutation relationships, especially primitive and derivable mutations.
       - The paper also explains why deleting a message from knowledge is not the right way to model forgetting.
@@ -416,7 +416,7 @@ entries:
       - Bank Login introduces the running case study and attack story.
       - Preliminaries define message algebra, Dolev-Yao derivations, role scripts, execution traces, and goals.
       - The Forget section defines the mutation, forget set, blocked derivations, and algorithm.
-      - Automated Analysis explains X-Men 2.0 and the Tamarin lemmas.
+      - Automated Analysis explains X-Men 2.1 and the Tamarin lemmas.
       - Forget and Other Mutations classifies primitive and derivable mutations.
       - The appendix gives the Bank Login role scripts and Tamarin rules.
     related: [paper.forget.xmen2, paper.bank-login.model, paper.bank-login.appendix-overview]
@@ -833,7 +833,7 @@ entries:
       - The derivation set is written as Pi.
       - If at least one derivation has no blocked hypotheses, the original send is preserved.
       - If every derivation is blocked, the algorithm looks at blocked hypotheses and tries replacements.
-      - The paper marks generation of all derivations as a crucial point for X-Men 2.0 implementation detail.
+      - The paper marks generation of all derivations as a crucial point for X-Men 2.1 implementation detail.
       - Normal derivations keep this search meaningful by avoiding immediate inverse-rule cycles.
     why: |
       This is the key reason Forget can be smarter than keyword matching: it reasons about dependency paths.
@@ -1278,7 +1278,7 @@ entries:
       - Fortis includes deviations arising from environment behavior, including human users.
       - It can generate deviations under which properties still hold as a repair-oriented workflow.
       - X-Men focuses on mutation families and their impact on security goals.
-      - X-Men 2.0 extends that mutation space with Forget.
+      - X-Men 2.1 extends that mutation space with Forget.
     related: [paper.forget.related-work, paper.mutation.approach-expanded]
 
   - id: paper.related-work-availability-sets

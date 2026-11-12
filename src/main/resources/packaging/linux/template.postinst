@@ -28,6 +28,7 @@ APP_ID="com.xmen.app"
 DESKTOP_FILE="x-men-X-Men.desktop"
 INSTALL_ICON="/opt/x-men/lib/X-Men.png"
 STOCK_ICON_NAME="x-men"
+REPO_URL="https://github.com/antoniobalordi/X-Men2.1"
 
 case "$1" in
     configure)
@@ -55,6 +56,13 @@ case "$1" in
 
         # ------------------------------------------------------------------
         # 2. AppStream metainfo — the file the OS app catalog actually reads.
+        #
+        # The release entry takes the version of the package being
+        # configured (Debian revision stripped), so the app catalog shows the
+        # installed version instead of a number frozen in this template.
+        # The date is the build date of the bundled launcher.
+        PKG_VERSION="$(dpkg-query -W -f='${Version}' x-men 2>/dev/null | sed 's/-[^-]*$//')"
+        PKG_DATE="$(date -u -r /opt/x-men/bin/X-Men +%Y-%m-%d 2>/dev/null || date -u +%Y-%m-%d)"
         mkdir -p /usr/share/metainfo
         cat > /usr/share/metainfo/${APP_ID}.metainfo.xml <<METAINFO_EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -80,8 +88,8 @@ case "$1" in
     <binary>X-Men</binary>
     <id>${DESKTOP_FILE}</id>
   </provides>
-  <url type="homepage">https://github.com/x-men-team/X-Men_2.0</url>
-  <url type="bugtracker">https://github.com/x-men-team/X-Men_2.0/issues</url>
+  <url type="homepage">${REPO_URL}</url>
+  <url type="bugtracker">${REPO_URL}/issues</url>
   <developer_name>X-Men</developer_name>
   <developer id="io.x-men">
     <name>X-Men</name>
@@ -100,10 +108,8 @@ case "$1" in
   </keywords>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="1.0.0" date="2026-05-29">
-      <description>
-        <p>Cross-platform installers (Windows EXE, macOS Intel + Apple Silicon DMGs, Linux DEB) with always-on splash + background videos, scrollable mutation panel, Linux file-picker fixes, and AppStream registration so the package shows up in the OS uninstaller.</p>
-      </description>
+    <release version="${PKG_VERSION}" date="${PKG_DATE}">
+      <url type="details">${REPO_URL}/releases/tag/v${PKG_VERSION}</url>
     </release>
   </releases>
   <update_contact>x-men-team@x-men.io</update_contact>

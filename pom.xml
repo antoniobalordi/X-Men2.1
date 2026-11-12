@@ -12,8 +12,10 @@
     </parent>
 
     <groupId>com.xmen</groupId>
-    <artifactId>X-Men_2.0</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>X-Men_2.1</artifactId>
+    <!-- Release version: the installer version (jpackage.appVersion) and the
+         v* release tag must match it; the release workflow checks the tag. -->
+    <version>1.2.0</version>
     <name>X-Men</name>
     <description>X-Men: A Mutation-Based Approach for the Formal Analysis of Security Ceremonies</description>
 
@@ -476,15 +478,16 @@
           The per-OS icon (-Djpackage.icon=…) is picked automatically by the
           activate-by-OS profiles below, so callers don't need to set it.
 
-          Override the user-visible version with -Djpackage.appVersion=X.Y.Z
-          (jpackage rejects Maven SNAPSHOT versions).
+          The installer version defaults to the project version above; override
+          it with -Djpackage.appVersion=X.Y.Z (jpackage rejects Maven SNAPSHOT
+          versions).
         -->
         <profile>
             <id>installer</id>
 
             <properties>
                 <jpackage.type>APP_IMAGE</jpackage.type>
-                <jpackage.appVersion>1.0.0</jpackage.appVersion>
+                <jpackage.appVersion>${project.version}</jpackage.appVersion>
                 <!--
                   Fallback icon if no OS-specific profile fired. Each platform
                   profile below overrides this to point at the native format
@@ -735,7 +738,7 @@
           to uninstall, which is the symptom we are fixing.
 
           linuxAppRelease pins the Debian release suffix so the resulting file
-          is reproducibly named x-men_1.0.0-1_amd64.deb and dpkg can compute
+          is reproducibly named x-men_<version>-1_amd64.deb and dpkg can compute
           proper upgrade ordering across versions.
         -->
         <profile>

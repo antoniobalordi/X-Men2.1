@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       app_version:
-        description: "App version for jpackage (X.Y.Z, no SNAPSHOT). Leave blank to use 1.0.1."
+        description: "App version for jpackage (X.Y.Z, no SNAPSHOT). Leave blank to use the pom.xml version."
         required: false
         default: ""
 
@@ -118,17 +118,27 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y fakeroot
 
+      # The pom.xml version is the single source of truth. A release tag must
+      # name the same version, so the installers never carry a stale number.
       - name: Resolve app version
         id: appver
         shell: bash
         run: |
+          set -euo pipefail
+          pom_version="$(./mvnw -B -q -ntp help:evaluate -Dexpression=project.version -DforceStdout | tail -n 1)"
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             v="${GITHUB_REF_NAME#v}"
+            if [[ "$v" != "$pom_version" ]]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match the pom.xml version ${pom_version}"
+              exit 1
+            fi
           else
             v="${{ github.event.inputs.app_version }}"
+            v="${v:-$pom_version}"
           fi
           if [[ ! "$v" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
-            v="1.0.1"
+            echo "::error::Invalid app version '$v' (expected X.Y.Z)"
+            exit 1
           fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
           echo "Using app version: $v"
@@ -160,7 +170,10 @@ jobs:
           test -n "$app"
           file "$app/Contents/MacOS/X-Men"
           file "$app/Contents/MacOS/X-Men" | grep -q "${{ matrix.macho_arch }}"
-          jar_file="$app/Contents/app/X-Men_2.0-0.0.1-SNAPSHOT.jar"
+          bundle_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")"
+          echo "CFBundleShortVersionString: $bundle_version"
+          test "$bundle_version" = "${{ steps.appver.outputs.version }}"
+          jar_file="$(ls "$app"/Contents/app/X-Men_2.1-*.jar)"
           jar tf "$jar_file" | grep -q "javafx-graphics-.*-${{ matrix.javafx_classifier }}\\.jar"
           if [ "${{ matrix.javafx_classifier }}" = "mac-aarch64" ]; then
             ! jar tf "$jar_file" | grep -q "javafx-graphics-[0-9].*-mac\\.jar"
@@ -168,12 +181,15 @@ jobs:
             ! jar tf "$jar_file" | grep -q "javafx-graphics-.*-mac-aarch64\\.jar"
           fi
 
-      - name: Verify Linux media dependencies
+      - name: Verify Linux package version and media dependencies
         if: runner.os == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
           deb="$(ls target/dist/*.deb)"
+          deb_version="$(dpkg-deb -f "$deb" Version)"
+          echo "Package version: $deb_version"
+          test "${deb_version%-*}" = "${{ steps.appver.outputs.version }}"
           depends="$(dpkg-deb -f "$deb" Depends)"
           echo "$depends"
           grep -q "libglib2.0-0" <<< "$depends"
