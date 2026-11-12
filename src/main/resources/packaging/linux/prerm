@@ -1,11 +1,12 @@
 #!/bin/sh
 # jpackage Debian prerm script for x-men.
 #
-# Filename must be `template.prerm` — that is the literal resource name
-# jpackage's OverridableResource lookup uses when scanning --resource-dir.
-# The prior `package-prerm.in` name was never matched and the script was
-# silently dropped, which is what left a stale AppStream metainfo behind
-# after `apt remove x-men`.
+# jpackage takes this file from the --resource-dir under the name of the
+# Debian file it replaces: `prerm` (see the header of `postinst`; up to
+# v1.2.0 it was named `template.prerm` and ignored). jpackage replaces its
+# upper-case placeholders anywhere in this file; the placeholder lines
+# below keep its default work of removing the desktop menu entry. Do not
+# write placeholder names in comments.
 #
 # Runs before the package is removed (apt remove / dpkg -r / GUI uninstall).
 # We clean up the AppStream metainfo + hicolor icon copies that postinst
@@ -18,8 +19,18 @@ set -e
 APP_ID="com.xmen.app"
 STOCK_ICON_NAME="x-men"
 
+package_type=deb
+DESKTOP_SCRIPTS
+LAUNCHER_AS_SERVICE_SCRIPTS
+
 case "$1" in
     remove|upgrade|deconfigure)
+        # Same requirement as in postinst: without these folders
+        # xdg-desktop-menu fails and the package could not be removed.
+        mkdir -p /usr/share/desktop-directories /usr/share/applications
+DESKTOP_COMMANDS_UNINSTALL
+LAUNCHER_AS_SERVICE_COMMANDS_UNINSTALL
+
         rm -f /usr/share/metainfo/${APP_ID}.metainfo.xml
 
         for size in 16 24 32 48 64 128 256 512; do

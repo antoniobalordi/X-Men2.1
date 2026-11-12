@@ -1,14 +1,17 @@
 #!/bin/sh
 # jpackage Debian postinst script for x-men.
 #
-# jpackage looks for this file under the literal name `template.postinst` in
-# the --resource-dir handed in by the build (see the pom.xml `resourceDir`
-# property under the installer-linux-extras profile). The previous filename
-# `package-postinst.in` was never matched by jpackage's OverridableResource
-# lookup, so this entire script was silently dropped from the .deb and the
-# AppStream metainfo below was never written — which is why the package
-# installed cleanly but never appeared in GNOME Software / KDE Discover /
-# Ubuntu's new App Center even after a manual cache refresh.
+# jpackage takes this file from the --resource-dir handed in by the build
+# (pom.xml `resourceDir`, installer-linux-extras profile) under the name of
+# the Debian file it replaces: `postinst`. Names starting with `template.`
+# are only jpackage's built-in defaults; up to v1.2.0 this script was named
+# `template.postinst`, was ignored, and the .deb shipped jpackage's default
+# postinst instead.
+#
+# jpackage replaces its upper-case placeholders anywhere in this file, so
+# the placeholder lines below (shell helpers before the `case`, install
+# commands under `configure`) keep the default work: installing the
+# desktop menu entry. Do not write placeholder names in comments.
 #
 # What this does on top of jpackage's default postinst:
 #   1. Writes a complete AppStream metainfo XML so the package appears in
@@ -29,9 +32,24 @@ DESKTOP_FILE="x-men-X-Men.desktop"
 INSTALL_ICON="/opt/x-men/lib/X-Men.png"
 STOCK_ICON_NAME="x-men"
 REPO_URL="https://github.com/antoniobalordi/X-Men2.1"
+# App version, filled in by jpackage when it builds the package.
+PKG_VERSION="APPLICATION_VERSION"
+
+package_type=deb
+LAUNCHER_AS_SERVICE_SCRIPTS
 
 case "$1" in
     configure)
+        # Run as root, xdg-desktop-menu (xdg-utils 1.1.3) needs writable
+        # desktop-directories AND applications folders under /usr/local/share
+        # or /usr/share, even with no .directory file to install; otherwise
+        # it exits 3, "No writable system menu directory found", and dpkg
+        # fails. Servers, WSL, containers and minimal installs lack
+        # desktop-directories; desktop systems already have both.
+        mkdir -p /usr/share/desktop-directories /usr/share/applications
+DESKTOP_COMMANDS_INSTALL
+LAUNCHER_AS_SERVICE_COMMANDS_INSTALL
+
         # ------------------------------------------------------------------
         # 1. Stock icon — copy the bundled PNG into the hicolor theme tree.
         #
@@ -57,11 +75,9 @@ case "$1" in
         # ------------------------------------------------------------------
         # 2. AppStream metainfo — the file the OS app catalog actually reads.
         #
-        # The release entry takes the version of the package being
-        # configured (Debian revision stripped), so the app catalog shows the
-        # installed version instead of a number frozen in this template.
-        # The date is the build date of the bundled launcher.
-        PKG_VERSION="$(dpkg-query -W -f='${Version}' x-men 2>/dev/null | sed 's/-[^-]*$//')"
+        # The release entry carries the packaged app version (PKG_VERSION
+        # above), so the app catalog shows the installed version. The date
+        # is the build date of the bundled launcher.
         PKG_DATE="$(date -u -r /opt/x-men/bin/X-Men +%Y-%m-%d 2>/dev/null || date -u +%Y-%m-%d)"
         mkdir -p /usr/share/metainfo
         cat > /usr/share/metainfo/${APP_ID}.metainfo.xml <<METAINFO_EOF
